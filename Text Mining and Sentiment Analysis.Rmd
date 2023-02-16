@@ -15,4 +15,31 @@ output:
 knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 library(tidyverse)
 library(ggplot2)
+library(dbplyr)
+library(gutenbergr)
+library(tidytext)
+library(stringr)
 ```
+
+
+## Background and Resources -- Cecelia
+-- tidy text analysis (why do we want to do this?)
+-- sentiment analysis 
+-- the package (gutenbergr and what is it)
+-- popular functions (and what they do)
+-- resources to extend learning
+- different lexicons
+-- reminder about joins
+
+
+
+## Practice
+## Demo of popular function
+(unest_tokens(), joins for the tibbles)
+- ok your turn!! --> Decide which book or books!
+-- testing correlation
+-- maybe give an optional challenge problem from the later chapters?
+
+Everything we have taught into one activity
+
+
