@@ -1,0 +1,18 @@
+---
+title: "Text Mining & Sentiment Analysis"
+author: '" "'
+output:
+  bookdown::html_document2:
+    split_by: none
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      toc_collapsed: true
+    number_sections: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)
+library(ggplot2)
+```
