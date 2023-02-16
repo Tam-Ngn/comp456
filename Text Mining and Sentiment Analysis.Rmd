@@ -31,6 +31,23 @@ library(stringr)
 - different lexicons
 -- reminder about joins
 
+## Resources
+[Textbook on tidy text]<https://www.tidytextmining.com/index.html>
+[Sentiment Analysis and Tidy Tuesday]<https://juliasilge.com/blog/animal-crossing/>
+
+## The tidy text format
+
+We define the tidy text format as being a table with one-token-per-row. This means that:
+  - Each variable is a column
+  - Each observation is a row
+  - Each type of observation unit is a table
+Therefore, a token is a meaningful unit of text, like a word, that we as data scientists are interested in analyzing. 
+For tidy text mining, we may want to do a process called tokenization which splits words into tokens and then allows us to normally analyze by word. 
+
+The unnest_tokens function:
+
+
+
 
 
 ## Practice
