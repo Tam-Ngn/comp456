@@ -19,6 +19,9 @@ library(dbplyr)
 library(gutenbergr)
 library(tidytext)
 library(stringr)
+library(janeaustenr)
+data("stop_words")
+library(scales)
 ```
 
 
@@ -44,13 +47,98 @@ We define the tidy text format as being a table with one-token-per-row. This mea
 Therefore, a token is a meaningful unit of text, like a word, that we as data scientists are interested in analyzing. 
 For tidy text mining, we may want to do a process called tokenization which splits words into tokens and then allows us to normally analyze by word. 
 
-The unnest_tokens function:
+## Accessing the Jane Austin Books
+```{r}
+original_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, 
+                                     regex("^chapter [\\divxlc]",
+                                           ignore_case = TRUE)))) %>%
+  ungroup()
+
+original_books
+```
+
+Now, to work with the tidy dataset we just created, we need to restructure it into a one-token-per-row format which leads us to our unnest_tokens function
+
+```{r}
+tidy_books <- original_books %>%
+  unnest_tokens(word, text)
+```
+
+The unnest_tokens uses the tokenizers package to separate each line of text in the original data frame into tokens. (More on different tyoes of tokenizing later)
 
 
+Now that our data is in a one-word-per-row format, we can use tidy tools (like dplyr). 
 
+## Removing Words
+We can use the tidytext dataset stop_words with an anti_join to remove common English words like "the", "of", and "to" which potentially not be fruitful in a sentiment analysis context. 
 
+```{r}
+tidy_books <- tidy_books %>%
+  anti_join(stop_words)
+```
 
 ## Practice
+1. Find the most common words in all the tidy_books books as a whole. Create a visualization via ggplot in how you think best fits the data you get. 
+```{r}
+tidy_books
+
+```
+
+
+# The gutenbergr package
+
+Another package we will be using for our sentiment analysis is the gutenbergr package, which can give us access to public domain works in the Project Gutenberg <https://www.gutenberg.org/> Collection. This is a huge package that gives us access to a large number of books and metadata around the books.
+
+
+Let's look at some of the Bronte sisters' works. 
+
+## Practice
+How would we clean this dataset to prep it for sentiment analysis (think unnest_tokens and anti_join)? From there, how would we find the the most common words in the novels?
+
+```{r}
+bronte <- gutenberg_download(c(1260, 768, 969, 9182, 767))
+```
+
+## Section Practice
+
+So, how do we think we can calculate the frequency of each word for the works of Jane Austin and the Bronte sisters? How would we graph this? 
+
+```{r}
+frequency <- bind_rows(mutate (bronte, author = 
+"Bronte Sister"),
+mutate(tidy_books, author = "Jane Austen"))
+ ## Can you find a way to use a regx here?
+ 
+```
+
+
+How would we plot this?
+```{r}
+
+```
+
+
+We can also run correlation tests, which allows us to quantify how similar and different these sets of word frequencies are.
+
+Let's run a Pearson's correlation test between the Bronte sisters and Jane Austins' works. 
+
+```{r}
+cor.test(data = frequency[frequency$author == "Brontë Sisters",],
+         ~ proportion + `Jane Austen`)
+```
+
+## Practice:
+
+What does this information tell you?
+
+>>>> ANSWER:
+
+
+
+
 ## Demo of popular function
 (unest_tokens(), joins for the tibbles)
 - ok your turn!! --> Decide which book or books!
