@@ -22,6 +22,8 @@ library(stringr)
 library(janeaustenr)
 data("stop_words")
 library(scales)
+library(textdata)
+library(wordcloud)
 ```
 
 
@@ -130,12 +132,99 @@ cor.test(data = frequency[frequency$author == "Brontë Sisters",],
          ~ proportion + `Jane Austen`)
 ```
 
-## Practice:
+## Practice
 
 What does this information tell you?
 
 >>>> ANSWER:
 
+
+Sentiment Analysis with tidy data
+
+So what is sentiment analysis? Sentiment Analysis allows us to analyze the emotion in text programmatically. one of the more common ways to do this is to consider the text as a combination of its individual words and the sentiment content of the whole text as the sum of the sentiment content of the individual words. 
+
+How are sentiment lexicons created and validated? They are constructed either via crowdsourcing or by an individual which they was validated using crowdsourcing, restaurant or movie reviews, or Twitter data. 
+
+There are a few different lexicon databases that can be used to do sentiment analysis (read more here <>) but for this we will use the nrc lexicon which categorizes words in a binary fashion (“yes”/“no”) into categories of positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust. 
+
+```{r}
+get_sentiments("nrc")
+```
+***NOTE: THIS WILL TAKE A WHILE TO DOWNLOAD***
+
+Let's try an example: What are the most common joy words in the book Emma?
+
+```{r}
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", 
+                                      ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+
+```
+
+
+# Practice: How many positive and negative words are in each of the sections of the book? Here is some starter code to help you out!
+
+```{r}
+jane_austen_posneg <- tidy_books %>%
+  inner_join(get_sentiments("nrc")) %>%
+  count(book, ______, %/% 80,
+       # We are using 80 just because of the text 
+        sentiment) %>%
+  # pivot_wider into sentiment and get values from the count (n)
+%>% 
+  mutate(sentiment = positive - negative)
+```
+
+Now try and plot the results!
+
+```{r}
+
+```
+
+
+Practice: What are the most common positive and negative words? Us the nrc database and tidy_books. We will want to use an inner_join and a count(). 
+
+```{r}
+
+```
+
+
+Now, make a graph with this information
+
+```{r}
+
+```
+
+
+One cool thing with sentiment analysis is we customize our lists, like for example the word "miss" is coded as negative but can also be used as a title for a young, unmarried women in Jane Austin's workds. We can use bind_rows() to solve this:
+
+```{r}
+figure_custom_words <- bind_rows(tibble(word = c("miss"), lexicon = c("custom")),
+                                 stop_words)
+```
+
+
+And we can make WORDCLOUDS:
+```{r}
+tidy_books %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+```
 
 
 
