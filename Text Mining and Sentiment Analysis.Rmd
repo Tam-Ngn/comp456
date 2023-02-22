@@ -24,6 +24,8 @@ data("stop_words")
 library(scales)
 library(textdata)
 library(wordcloud)
+library(igraph) #to create an igraph object
+library(ggraph) #to visualize the igraph object by turning it into ggraph with appropriate functions
 ```
 
 
@@ -228,6 +230,211 @@ tidy_books %>%
 
 
 
+
+#### Introduction to the tf-idf statistic - Tam
+
+Question: When we look at a body of literature works, say J.K.Rowling's Harry Potter series, and want to know what words/terms are more prominent in one book than in others (therefore can potentially tell us about a character or event specifically tied to that book), how do we do it?
+
+`tf` : term frequency, the number of appearances a word makes over total words in a document (%).
+
+problem: the most frequently used words in English tend to be `stopwords` like "the", "of" or "like", which generally are not that important except in some cases. Therefore, we need a better metric to reflect the true value of a word or phrase.
+
+
+`idf`: inverse document frequency, which is the natural log of the total number of documents divided by the number of documents containing the term we want to examine. The `idf` is a measure that penalizes commonly used words by decreasing their weights but rewarding less commonly used words by increasing their weights. Its formula is as follows 
+
+                
+$$idf(\textrm{term}) = \ln \left( \frac{n_{\textrm{documents}}}{n_{\textrm{documents containing term}}}\right)$$
+
+`tf_idf`: is the product of tf and idf that rescales the importance of a term's weight. The larger the statistic, the more important the term is.
+
+### Put theory into practice
+
+One useful function to calculate all the `tf`, `idf` and `tf_idf` at the same time is `bind_tf_idf()` that takes 3 parameters term, book and n (how many times a word appears in a text). Can you set us up for success by wrangling the `austen_books` data?
+
+hint: You will need to use the `unnest_tokens` we discussed earlier. For a challenge, please skip the code below and start from scatch in a new empty chunk.
+
+
+```{r}
+book_words <- austen_books() %>%
+  ____(word, text) %>%  # create one token per row
+  count(____, ____)  #find n and arrange it by n, make sure you also include the book column
+  
+
+total_words <- book_words %>% 
+  group_by() %>%  #find total word count by book
+  ____(total = sum(n))  #what method summarizes the total word count? 
+
+
+book_words <- left_join(book_words, total_words)
+
+# Apply `bind_tf_idf` to our data
+
+book_words %>% 
+  bind_tf_idf(____, ____, ____)
+```
+
+
+*Question*: What does it mean when tf_idf = 0?
+
+hint: how was tf_idf calculated?
+
+Now let's visualize this data. Remember we have a number of books in this data and, say, we want to see the top 15 terms/words in each book. What function helps pull the top 15? What geom_ can we use? We would like to see a subgraph for each book, what function can we use?
+
+Start by writing pseudocode below (at least 4 major points are needed):
+
+-
+
+-
+
+-
+
+- 
+
+Now we code: 
+
+```{r}
+
+```
+
+
+
+*Optional*
+
+Can you execute the same process on a different dataset? Run the code below to get a physics books dataset.
+
+```{r}
+physics <- gutenberg_download(c(37729, 14725, 13476, 30155), 
+                              meta_fields = "author")
+```
+
+#### N-grams - Tam
+
+We are also interested in a phrase consisting more than 1 word, for example "data science", "machine learning", "correlated data" or "causal inference". A two-word phrase is called a bigram. Similarly, a three-word phrase is called a trigram. Just like that an n-gram is a phrase made up of n words.
+
+Why do we want to analyze n-grams?
+
+One answer is we want a better, non-misleading sentiment analysis. Previously, we only did sentiment analysis on individual words and based on the reference lexicon, we gave it an affective rating. This completely ignored the context in which the word was used, for example, consider the following sentence:
+
+"I did not succeed in the competition and so I am not happy"
+
+A unigram (one word) analysis would think this is a positive statement, because the only things it sees are "succeed" and "happy", which are very powerful positive words. However, this is obviously not the case. Therefore, using n-grams to account for context helps us better understand what emotion(s) a text actually is.
+
+Furthermore, n-grams allow us to build a directed network of words that provides a glimpse into the correlation of a pair of words (i.e what two words are usually used together in a text).
+
+These two big ideas are exactly what we will be exploring next. 
+
+###  Using bigrams to provide context in sentiment analysis
+
+Can you use the unnest_tokens() function to tokenize by pairs of words?
+
+```{r}
+austen_bigrams <- austen_books() %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = ____) %>% # what is n if it is a bigram?
+  filter(!is.na(bigram))
+```
+
+
+Now we want to get split the bigrams into to columns so that it is easier to filter only bigrams that have "not" as their first word.
+
+
+```{r}
+bigrams_separated <- austen_bigrams %>% 
+  ____(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(____ == ____)
+```
+
+Then we want to join `no_words` with one of lexicons mentioned earlier, with word2 being the id column. For the purpose of using bar graphs for visualization, we use the "AFINN" lexicon, which gives us a numeric rating of the words.
+
+
+```{r}
+afinn <- get_sentiments("afinn") #getting the lexicon
+
+not_words <- bigrams_separated %>%
+  inner_join(AFINN, by = c(word2 = "word")) %>%
+  count(word2, value, sort = TRUE)
+```
+
+Graph the dataset
+
+```{r}
+not_words %>%
+  mutate(contribution = n * value) %>% #the lexicon value times the number of times the word appears
+  arrange(desc(abs(contribution))) %>%
+  head(20) %>%
+  mutate(word2 = reorder(word2, contribution)) %>%
+  ggplot(aes(n * value, word2, fill = n * value > 0)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = "Sentiment value * number of occurrences",
+       y = "Words preceded by \"not\"")
+```
+
+*Optional*
+
+`not` is not the only negation word, we also have words like "no", "never", "without" to negate the sentiment of the word the follows them. Can you filter bigrams with those negation words as the first word? Remeber to facet_wrap when using ggplot.
+
+```{r}
+negation_words <- c("not", "no", "never", "without")
+```
+
+
+
+
+
+### Visualizing a network of bigrams with ggraph
+
+We may be interested in visualizing all of the relationships among words simultaneously, rather than just the top few at a time. As one common visualization, we can arrange the words into a network, or “graph.” Here we’ll be referring to a “graph” not in the sense of a visualization, but as a combination of connected nodes. A graph can be constructed from a tidy object since it has three variables:
+
+from: the node an edge is coming from
+to: the node an edge is going towards
+weight: A numeric value associated with each edge
+
+
+
+```{r}
+# prepare data for graphing the bigram network
+bigram <- austen_bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word2 %in% stop_words$word) %>% 
+  count(word1, word2, sort = TRUE) %>% 
+  filter(n > 20) # pull bigrams with n > 20
+
+bigram
+```
+
+
+```{r}
+bigram_graph <- bigram %>% 
+  graph_from_data_frame() #create framwork for the network
+
+bigram_graph
+
+```
+```{r fig.width= 4}
+#create the network
+
+set.seed(456) #the node positions are random
+
+a <- grid::arrow(type = "closed", length = unit(.1, "inches")) #create arrows to specify word1 and word2
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.05, 'inches')) +
+  geom_node_point(color = "lightblue", size = 4) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+```
+
+n-grams are adjacent words. What about words that usually appear together but are not adjacent?
+
+*optional*
+
+### Pairwise correlation
+
+<https://www.tidytextmining.com/ngrams.html>(please use this link for more resources)
+
+
 ## Demo of popular function
 (unest_tokens(), joins for the tibbles)
 - ok your turn!! --> Decide which book or books!
@@ -235,5 +442,7 @@ tidy_books %>%
 -- maybe give an optional challenge problem from the later chapters?
 
 Everything we have taught into one activity
+
+
 
 
