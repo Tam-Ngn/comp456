@@ -1,6 +1,6 @@
 ---
 title: "Text Mining & Sentiment Analysis"
-author: '" "'
+author: 'Cecelia, Tam, Yiyang'
 output:
   bookdown::html_document2:
     split_by: none
@@ -30,26 +30,73 @@ library(ggraph) #to visualize the igraph object by turning it into ggraph with a
 
 
 ## Background and Resources -- Cecelia
--- tidy text analysis (why do we want to do this?)
--- sentiment analysis 
--- the package (gutenbergr and what is it)
--- popular functions (and what they do)
--- resources to extend learning
-- different lexicons
--- reminder about joins
++ tidy text analysis (why do we want to do this?)
++ sentiment analysis 
++ the package (gutenbergr and what is it)
++ popular functions (and what they do)
++ resources to extend learning
++ different lexicons
++ reminder about joins
 
 ## Resources
 [Textbook on tidy text]<https://www.tidytextmining.com/index.html>
+
 [Sentiment Analysis and Tidy Tuesday]<https://juliasilge.com/blog/animal-crossing/>
 
-## The tidy text format
+## The tidy text format & Document-Term Matrix(DTM)
 
-We define the tidy text format as being a table with one-token-per-row. This means that:
-  - Each variable is a column
-  - Each observation is a row
-  - Each type of observation unit is a table
+* We define the tidy text format as being a table with one-token-per-row. This means that:
+  + Each variable is a column
+  + Each observation is a row
+  + Each type of observation unit is a table
 Therefore, a token is a meaningful unit of text, like a word, that we as data scientists are interested in analyzing. 
 For tidy text mining, we may want to do a process called tokenization which splits words into tokens and then allows us to normally analyze by word. 
+
+* DTM is one of the most common structure that text mining work with, where
+  + Each row represents a document (book or article)
+  + Each column represents one term.
+  + Each value (typically) contains the number of appearances of that term in that document.
+  
+Why do we need DTM format? Most of the existing R tools for natural language processing, besides the tidytext package, aren’t compatible with tidy format, so it's important to know the “glue” that connects the tidy text format with other important packages and data structures, allowing you to rely on both existing text mining packages and the suite of tidy tools to perform your analysis.
+
+DTM objects cannot be used directly with tidy tools, just as tidy data frames cannot be used as input for most text mining packages. Thus, the tidytext package provides two verbs that convert between the two formats.
+
++ tidy() turns a DTM to a tidy dataframe.
++ cast() turns a tidy one term per row dataframe to a matrix.
+
+```{r}
+# DTM
+data("AssociatedPress", package = "topicmodels")
+
+# tidying a DTM
+ap_td <- tidy(AssociatedPress)
+ap_td
+
+# joining tidy dataframe with sentiments dataframe
+ap_sentiments <- ap_td %>% 
+  inner_join(get_sentiments("bing"), by = c(term = "word"))
+
+# As we’ve seen in previous chapters, this form is convenient for analysis with the dplyr, 
+# tidytext and ggplot2 packages. For example, you can perform sentiment analysis on these newspaper articles
+# by joining tidy dataframe with sentiments dataset ('bing', 'nrc', 'afinn', 'loughran').
+
+ap_sentiments %>% 
+  count(sentiment, term, wt = count) %>% 
+  ungroup() %>% 
+  filter(n > 200) %>% 
+  mutate(m = ifelse(sentiment == "positive", n, -n)) %>% 
+  mutate(term = reorder(term, m)) %>% 
+  ggplot(aes(x = m, y = term, fill = sentiment)) +
+  geom_col() +
+  labs(x = "Contribution to Sentiment", y = "")
+```
+
+```{r}
+# casting a tidy dataframe
+ap_td %>% 
+  cast_dtm(document, term, count)
+```
+
 
 ## Accessing the Jane Austin Books
 ```{r}
