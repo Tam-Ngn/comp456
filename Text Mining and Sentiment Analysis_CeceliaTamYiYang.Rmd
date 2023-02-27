@@ -1,0 +1,491 @@
+---
+title: "Text Mining & Sentiment Analysis"
+author: 'Cecelia, Tam, Yiyang'
+output:
+  bookdown::html_document2:
+    split_by: none
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      toc_collapsed: true
+    number_sections: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, error = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(dbplyr)
+library(gutenbergr)
+library(tidytext)
+library(stringr)
+library(janeaustenr)
+data("stop_words")
+library(scales)
+library(textdata)
+library(topicmodels)
+```
+
+
+## Background and Resources -- Cecelia
++ tidy text analysis (why do we want to do this?)
++ the package (gutenbergr and what is it)
++ different lexicons
++ sentiment analysis 
++ reminder about joins
+
+## Resources
+[Textbook on tidy text]<https://www.tidytextmining.com/index.html>
+
+[Sentiment Analysis and Tidy Tuesday]<https://juliasilge.com/blog/animal-crossing/>
+
+## The tidy text format & Document-Term Matrix(DTM)
+
+* We define the tidy text format as being a table with one-token-per-row. This means that:
+  + Each variable is a column
+  + Each observation is a row
+  + Each type of observation unit is a table
+Therefore, a token is a meaningful unit of text, like a word, that we as data scientists are interested in analyzing. 
+For tidy text mining, we may want to do a process called tokenization which splits words into tokens and then allows us to normally analyze by word. 
+
+* DTM is one of the most common structure that text mining work with, where
+  + Each row represents a document (book or article)
+  + Each column represents one term.
+  + Each value (typically) contains the number of appearances of that term in that document.
+  
+Why do we need DTM format? Most of the existing R tools for natural language processing, besides the tidytext package, aren’t compatible with tidy format, so it's important to know the “glue” that connects the tidy text format with other important packages and data structures, allowing you to rely on both existing text mining packages and the suite of tidy tools to perform your analysis.
+
+DTM objects cannot be used directly with tidy tools, just as tidy data frames cannot be used as input for most text mining packages. Thus, the tidytext package provides two verbs that convert between the two formats.
+
++ tidy() turns a DTM to a tidy dataframe.
++ cast() turns a tidy one term per row dataframe to a matrix.
+
+```{r}
+# DTM
+data("AssociatedPress", package = "topicmodels")
+
+# tidying a DTM
+ap_td <- tidy(AssociatedPress)
+ap_td
+
+# joining tidy dataframe with sentiments dataframe
+ap_sentiments <- ap_td %>% 
+  inner_join(get_sentiments("bing"), by = c(term = "word"))
+
+# As we’ve seen in previous chapters, this form is convenient for analysis with the dplyr, 
+# tidytext and ggplot2 packages. For example, you can perform sentiment analysis on these newspaper articles
+# by joining tidy dataframe with sentiments dataset ('bing', 'nrc', 'afinn', 'loughran').
+
+ap_sentiments %>% 
+  count(sentiment, term, wt = count) %>% 
+  ungroup() %>% 
+  filter(n > 200) %>% 
+  mutate(m = ifelse(sentiment == "positive", n, -n)) %>% 
+  mutate(term = reorder(term, m)) %>% 
+  ggplot(aes(x = m, y = term, fill = sentiment)) +
+  geom_col() +
+  labs(x = "Contribution to Sentiment", y = "")
+```
+
+```{r}
+# casting a tidy dataframe
+ap_td %>% 
+  cast_dtm(document, term, count)
+```
+
+
+## Accessing the Jane Austin Books
+```{r}
+original_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, 
+                                     regex("^chapter [\\divxlc]",
+                                           ignore_case = TRUE)))) %>%
+  ungroup()
+
+original_books
+```
+
+Now, to work with the tidy dataset we just created, we need to restructure it into a one-token-per-row format which leads us to our unnest_tokens function
+
+```{r}
+tidy_books <- original_books %>%
+  unnest_tokens(word, text)
+```
+
+The unnest_tokens uses the tokenizers package to separate each line of text in the original data frame into tokens. (More on different tyoes of tokenizing later)
+
+
+Now that our data is in a one-word-per-row format, we can use tidy tools (like dplyr). 
+
+## Removing Words
+We can use the tidytext dataset stop_words with an anti_join to remove common English words like "the", "of", and "to" which potentially not be fruitful in a sentiment analysis context. 
+
+```{r}
+tidy_books <- tidy_books %>%
+  anti_join(stop_words)
+```
+
+## Practice
+1. Find the most common words in all the tidy_books books as a whole. Create a visualization via ggplot in how you think best fits the data you get. 
+```{r}
+tidy_books
+
+```
+
+
+# The gutenbergr package
+
+Another package we will be using for our sentiment analysis is the gutenbergr package, which can give us access to public domain works in the Project Gutenberg <https://www.gutenberg.org/> Collection. This is a huge package that gives us access to a large number of books and metadata around the books.
+
+
+Let's look at some of the Bronte sisters' works. 
+
+## Practice
+How would we clean this dataset to prep it for sentiment analysis (think unnest_tokens and anti_join)? From there, how would we find the the most common words in the novels?
+
+```{r}
+bronte <- gutenberg_download(c(1260, 768, 969, 9182, 767))
+```
+
+## Section Practice
+
+So, how do we think we can calculate the frequency of each word for the works of Jane Austin and the Bronte sisters? How would we graph this? 
+
+```{r}
+frequency <- bind_rows(mutate (bronte, author = 
+"Bronte Sister"),
+mutate(tidy_books, author = "Jane Austen"))
+ ## Can you find a way to use a regx here?
+ 
+```
+
+
+How would we plot this?
+```{r}
+
+```
+
+
+We can also run correlation tests, which allows us to quantify how similar and different these sets of word frequencies are.
+
+Let's run a Pearson's correlation test between the Bronte sisters and Jane Austins' works. 
+
+```{r}
+cor.test(data = frequency[frequency$author == "Brontë Sisters",],
+         ~ proportion + `Jane Austen`)
+```
+
+## Practice
+
+What does this information tell you?
+
+>>>> ANSWER:
+
+
+Sentiment Analysis with tidy data
+
+So what is sentiment analysis? Sentiment Analysis allows us to analyze the emotion in text programmatically. one of the more common ways to do this is to consider the text as a combination of its individual words and the sentiment content of the whole text as the sum of the sentiment content of the individual words. 
+
+How are sentiment lexicons created and validated? They are constructed either via crowdsourcing or by an individual which they was validated using crowdsourcing, restaurant or movie reviews, or Twitter data. 
+
+There are a few different lexicon databases that can be used to do sentiment analysis (read more here <>) but for this we will use the nrc lexicon. 
+
+```{r}
+get_sentiments("nrc")
+```
+***NOTE: THIS WILL TAKE A WHILE TO DOWNLOAD***
+
+The nrc lexicon works by giving a list of English words and then giving their association to eight basic emotions (anger, fear, anticipation, trust, surprise, sadness, joy, and disgust) and two sentiments (negative and positive). The annotations for the lexicon is collected manually through crowd sourcing. 
+
+To explore more about the nrc lexicon: <https://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm#:~:text=The%20NRC%20Emotion%20Lexicon%20is,were%20manually%20done%20by%20crowdsourcing.>
+
+
+As shown below, once we add new variables and organize the book so each word has a distinct row, we want to use an inner_join to find the words in common in the book Emma with the "joy" words (or nrc_join dataset) in the nrc lexicon. 
+
+Let's try an example: What are the most common joy words in the book Emma?
+
+```{r}
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", 
+                                      ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+
+```
+
+
+# Practice: How many positive and negative words are in each of the sections of the book? Here is some starter code to help you out!
+
+```{r}
+jane_austen_posneg <- tidy_books %>%
+  inner_join(get_sentiments("nrc")) %>%
+  count(book, ______, %/% 80,
+       # We are using 80 just because of the text 
+        sentiment) %>%
+  # pivot_wider into sentiment and get values from the count (n)
+%>% 
+  mutate(sentiment = positive - negative)
+```
+
+Now try and plot the results! Creat the graph however you think best fits the previous results.
+
+```{r}
+
+```
+
+
+Practice: What are the most common positive and negative words? Use the nrc database and tidy_books. We will want to use an inner_join and a count(). 
+
+
+
+```{r}
+
+```
+
+
+Now, make a graph with this information
+
+```{r}
+
+```
+
+
+One cool thing with sentiment analysis is we customize our lists, like for example the word "miss" is coded as negative but can also be used as a title for a young, unmarried women in Jane Austin's works. We can use bind_rows() to solve this:
+
+```{r}
+figure_custom_words <- bind_rows(tibble(word = c("miss"), lexicon = c("custom")),
+                                 stop_words)
+```
+
+
+
+
+#### Introduction to the tf-idf statistic - Tam
+
+Question: When we look at a body of literature works, say J.K.Rowling's Harry Potter series, and want to know what words/terms are more prominent in one book than in others (therefore can potentially tell us about a character or event specifically tied to that book), how do we do it?
+
+`tf` : term frequency, the number of appearances a word makes over total words in a document (%).
+
+problem: the most frequently used words in English tend to be `stopwords` like "the", "of" or "like", which generally are not that important except in some cases. Therefore, we need a better metric to reflect the true value of a word or phrase.
+
+
+`idf`: inverse document frequency, which is the natural log of the total number of documents divided by the number of documents containing the term we want to examine. The `idf` is a measure that penalizes commonly used words by decreasing their weights but rewarding less commonly used words by increasing their weights. Its formula is as follows 
+
+                
+$$idf(\textrm{term}) = \ln \left( \frac{n_{\textrm{documents}}}{n_{\textrm{documents containing term}}}\right)$$
+
+`tf_idf`: is the product of tf and idf that rescales the importance of a term's weight. The larger the statistic, the more important the term is.
+
+### Put theory into practice
+
+One useful function to calculate all the `tf`, `idf` and `tf_idf` at the same time is `bind_tf_idf()` that takes 3 parameters term, book and n (how many times a word appears in a text). Can you set us up for success by wrangling the `austen_books` data?
+
+hint: You will need to use the `unnest_tokens` we discussed earlier. For a challenge, please skip the code below and start from scatch in a new empty chunk.
+
+
+```{r}
+book_words <- austen_books() %>%
+  ____(word, text) %>%  # create one token per row
+  count(____, ____)  #find n and arrange it by n, make sure you also include the book column
+  
+
+total_words <- book_words %>% 
+  group_by() %>%  #find total word count by book
+  ____(total = sum(n))  #what method summarizes the total word count? 
+
+
+book_words <- left_join(book_words, total_words)
+
+# Apply `bind_tf_idf` to our data
+
+book_words %>% 
+  bind_tf_idf(____, ____, ____)
+```
+
+
+*Question*: What does it mean when tf_idf = 0?
+
+hint: how was tf_idf calculated?
+
+Now let's visualize this data. Remember we have a number of books in this data and, say, we want to see the top 15 terms/words in each book. What function helps pull the top 15? What geom_ can we use? We would like to see a subgraph for each book, what function can we use?
+
+Start by writing pseudocode below (at least 4 major points are needed):
+
+-
+
+-
+
+-
+
+- 
+
+Now we code: 
+
+```{r}
+
+```
+
+
+
+*Optional*
+
+Can you execute the same process on a different dataset? Run the code below to get a physics books dataset.
+
+```{r}
+physics <- gutenberg_download(c(37729, 14725, 13476, 30155), 
+                              meta_fields = "author")
+```
+
+#### N-grams - Tam
+
+We are also interested in a phrase consisting more than 1 word, for example "data science", "machine learning", "correlated data" or "causal inference". A two-word phrase is called a bigram. Similarly, a three-word phrase is called a trigram. Just like that an n-gram is a phrase made up of n words.
+
+Why do we want to analyze n-grams?
+
+One answer is we want a better, non-misleading sentiment analysis. Previously, we only did sentiment analysis on individual words and based on the reference lexicon, we gave it an affective rating. This completely ignored the context in which the word was used, for example, consider the following sentence:
+
+"I did not succeed in the competition and so I am not happy"
+
+A unigram (one word) analysis would think this is a positive statement, because the only things it sees are "succeed" and "happy", which are very powerful positive words. However, this is obviously not the case. Therefore, using n-grams to account for context helps us better understand what emotion(s) a text actually is.
+
+Furthermore, n-grams allow us to build a directed network of words that provides a glimpse into the correlation of a pair of words (i.e what two words are usually used together in a text).
+
+These two big ideas are exactly what we will be exploring next. 
+
+###  Using bigrams to provide context in sentiment analysis
+
+Can you use the unnest_tokens() function to tokenize by pairs of words?
+
+```{r}
+austen_bigrams <- austen_books() %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = ____) %>% # what is n if it is a bigram?
+  filter(!is.na(bigram))
+```
+
+
+Now we want to get split the bigrams into to columns so that it is easier to filter only bigrams that have "not" as their first word.
+
+
+```{r}
+bigrams_separated <- austen_bigrams %>% 
+  ____(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(____ == ____)
+```
+
+Then we want to join `no_words` with one of lexicons mentioned earlier, with word2 being the id column. For the purpose of using bar graphs for visualization, we use the "AFINN" lexicon, which gives us a numeric rating of the words.
+
+
+```{r}
+afinn <- get_sentiments("afinn") #getting the lexicon
+
+not_words <- bigrams_separated %>%
+  inner_join(AFINN, by = c(word2 = "word")) %>%
+  count(word2, value, sort = TRUE)
+```
+
+Graph the dataset
+
+```{r}
+not_words %>%
+  mutate(contribution = n * value) %>% #the lexicon value times the number of times the word appears
+  arrange(desc(abs(contribution))) %>%
+  head(20) %>%
+  mutate(word2 = reorder(word2, contribution)) %>%
+  ggplot(aes(n * value, word2, fill = n * value > 0)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = "Sentiment value * number of occurrences",
+       y = "Words preceded by \"not\"")
+```
+
+*Optional*
+
+`not` is not the only negation word, we also have words like "no", "never", "without" to negate the sentiment of the word the follows them. Can you filter bigrams with those negation words as the first word? Remeber to facet_wrap when using ggplot.
+
+```{r}
+negation_words <- c("not", "no", "never", "without")
+```
+
+
+
+
+
+### Visualizing a network of bigrams with ggraph
+
+We may be interested in visualizing all of the relationships among words simultaneously, rather than just the top few at a time. As one common visualization, we can arrange the words into a network, or “graph.” Here we’ll be referring to a “graph” not in the sense of a visualization, but as a combination of connected nodes. A graph can be constructed from a tidy object since it has three variables:
+
+from: the node an edge is coming from
+to: the node an edge is going towards
+weight: A numeric value associated with each edge
+
+
+
+```{r}
+# prepare data for graphing the bigram network
+bigram <- austen_bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word2 %in% stop_words$word) %>% 
+  count(word1, word2, sort = TRUE) %>% 
+  filter(n > 20) # pull bigrams with n > 20
+
+bigram
+```
+
+
+```{r}
+bigram_graph <- bigram %>% 
+  graph_from_data_frame() #create framwork for the network
+
+bigram_graph
+
+```
+```{r fig.width= 4}
+#create the network
+
+set.seed(456) #the node positions are random
+
+a <- grid::arrow(type = "closed", length = unit(.1, "inches")) #create arrows to specify word1 and word2
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.05, 'inches')) +
+  geom_node_point(color = "lightblue", size = 4) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+```
+
+n-grams are adjacent words. What about words that usually appear together but are not adjacent?
+
+*optional*
+
+### Pairwise correlation
+
+<https://www.tidytextmining.com/ngrams.html>(please use this link for more resources)
+
+
+## Demo of popular function
+(unest_tokens(), joins for the tibbles)
+- ok your turn!! --> Decide which book or books!
+-- testing correlation
+-- maybe give an optional challenge problem from the later chapters?
+
+Everything we have taught into one activity
+
+
+
+
