@@ -1,0 +1,19 @@
+---
+title: "2020-2 data"
+author: '" "'
+date: '2023-02-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(haven)
+```
+
+
+```{r}
+ATP_2020 <- read_sav("C:/Users/cecei/Downloads/W76_Oct20/W76_Oct20/ATP W76.sav")
+ATP_2022 <- read_sav("C:/Users/cecei/Downloads/W101_Jan22/ATP W101.sav")
+```
+
