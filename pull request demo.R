@@ -29,7 +29,7 @@ for(i in d){
 }
 
 
-save(totalarticles, file = "totalarticles.RData")
+# save(totalarticles, "/Users/yiyangshi/Desktop/SPRING 2023/STAT 456/comp465/totalarticles.RData", file = "totalarticles.RData")
 
 # for(i in d){
 #   p = 0
