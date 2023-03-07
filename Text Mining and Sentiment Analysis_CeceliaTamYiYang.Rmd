@@ -12,7 +12,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, error = FALSE)
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 library(tidyverse)
 library(ggplot2)
 library(dbplyr)
@@ -23,7 +23,9 @@ library(janeaustenr)
 data("stop_words")
 library(scales)
 library(textdata)
-library(topicmodels)
+library(wordcloud)
+library(igraph) #to create an igraph object
+library(ggraph) #to visualize the igraph object by turning it into ggraph with appropriate functions
 ```
 
 
@@ -172,7 +174,7 @@ We can also run correlation tests, which allows us to quantify how similar and d
 
 Let's run a Pearson's correlation test between the Bronte sisters and Jane Austins' works. 
 
-```{r}
+```{r eval=FALSE}
 cor.test(data = frequency[frequency$author == "Brontë Sisters",],
          ~ proportion + `Jane Austen`)
 ```
@@ -230,7 +232,7 @@ tidy_books %>%
 
 # Practice: How many positive and negative words are in each of the sections of the book? Here is some starter code to help you out!
 
-```{r}
+```{r eval=FALSE}
 jane_austen_posneg <- tidy_books %>%
   inner_join(get_sentiments("nrc")) %>%
   count(book, ______, %/% 80,
@@ -297,7 +299,7 @@ One useful function to calculate all the `tf`, `idf` and `tf_idf` at the same ti
 hint: You will need to use the `unnest_tokens` we discussed earlier. For a challenge, please skip the code below and start from scatch in a new empty chunk.
 
 
-```{r}
+```{r eval=FALSE}
 book_words <- austen_books() %>%
   ____(word, text) %>%  # create one token per row
   count(____, ____)  #find n and arrange it by n, make sure you also include the book column
@@ -370,7 +372,7 @@ These two big ideas are exactly what we will be exploring next.
 
 Can you use the unnest_tokens() function to tokenize by pairs of words?
 
-```{r}
+```{r eval=FALSE}
 austen_bigrams <- austen_books() %>%
   unnest_tokens(bigram, text, token = "ngrams", n = ____) %>% # what is n if it is a bigram?
   filter(!is.na(bigram))
@@ -380,7 +382,7 @@ austen_bigrams <- austen_books() %>%
 Now we want to get split the bigrams into to columns so that it is easier to filter only bigrams that have "not" as their first word.
 
 
-```{r}
+```{r eval=FALSE}
 bigrams_separated <- austen_bigrams %>% 
   ____(bigram, c("word1", "word2"), sep = " ") %>% 
   filter(____ == ____)
@@ -389,7 +391,7 @@ bigrams_separated <- austen_bigrams %>%
 Then we want to join `no_words` with one of lexicons mentioned earlier, with word2 being the id column. For the purpose of using bar graphs for visualization, we use the "AFINN" lexicon, which gives us a numeric rating of the words.
 
 
-```{r}
+```{r eval=FALSE}
 afinn <- get_sentiments("afinn") #getting the lexicon
 
 not_words <- bigrams_separated %>%
@@ -399,7 +401,7 @@ not_words <- bigrams_separated %>%
 
 Graph the dataset
 
-```{r}
+```{r eval=FALSE}
 not_words %>%
   mutate(contribution = n * value) %>% #the lexicon value times the number of times the word appears
   arrange(desc(abs(contribution))) %>%
@@ -433,7 +435,7 @@ weight: A numeric value associated with each edge
 
 
 
-```{r}
+```{r eval=FALSE}
 # prepare data for graphing the bigram network
 bigram <- austen_bigrams %>% 
   separate(bigram, c("word1", "word2"), sep = " ") %>% 
@@ -446,13 +448,14 @@ bigram
 ```
 
 
-```{r}
+```{r eval=FALSE}
 bigram_graph <- bigram %>% 
   graph_from_data_frame() #create framwork for the network
 
 bigram_graph
 
 ```
+
 ```{r fig.width= 4}
 #create the network
 
@@ -487,5 +490,12 @@ n-grams are adjacent words. What about words that usually appear together but ar
 Everything we have taught into one activity
 
 
+## Notes
++ There needed to be more of a concise definition on what the lexicons are, specifically the one we used. The code chunks made a lot of sense and the flow of the document made sense for the person that was doing the activities
++ It would be better to explain the relationship between DTM and tidy df and tell the audience the pros and cons of each.
++ Do a demo of text cleaning and visualization before jumping into the wrangling part. 
 
-
+## What we improved
++ We took the feedback about the lexicon details and added that in. We also spell checked the document again and added some more details. 
++ We added the background info about tidy df and DTM, especially how to change the format between those.
++ We made a demo of how to perform a basic sentiment visualization with sentiment dataset and text df.
