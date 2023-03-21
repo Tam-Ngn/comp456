@@ -1,0 +1,148 @@
+---
+title: "bidenexploratory"
+author: '" "'
+date: '2023-03-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE, tidy = FALSE, message = FALSE, cache.extra = packageVersion("tufte"))
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(urltools)
+library(scales)
+library(textdata)
+library(wordcloud)
+library(igraph) 
+library(ggplot2)
+library(tidytext)
+library(broom)
+library(reshape2)
+data("stop_words")
+```
+
+```{r}
+load("C:/Users/cecei/Desktop/comp465/bidenarticles.RData")
+ls()
+```
+```{r}
+bidenassess <- bidenarticles %>%
+   mutate(keyword = bidenarticles$text,
+         section_name = section_name) %>%
+  select(headline, lead_paragraph, keywords, section_name, word_count, pub_date, abstract)
+```
+
+```{r}
+newheadline <- bidenassess %>% 
+  group_by(section_name) %>% 
+  unnest_tokens(word, headline) %>%
+  anti_join(stop_words) %>% 
+  count(section_name, word) %>% 
+  ungroup()
+
+total_words <- headline %>% 
+   group_by(section_name) %>% 
+  summarize(total = sum(n)) %>% 
+  ungroup()
+```
+
+```{r}
+mystopwords <- tibble(word = c("d.a", "89", "american", "99", "5", "3", "2020", "1.1", "0", "don\'t", "2024", "6", "he\'s", "trumps"))
+
+newheadline %>% 
+  left_join(total_words, by = c("section_name" = "section_name")) %>%
+  anti_join(mystopwords, by = c("word" = "word")) %>% 
+  filter(n > 1) %>% 
+  bind_tf_idf(section_name, word, n) %>% 
+  group_by(section_name) %>%
+  slice_max(tf_idf, n = 15, with_ties = FALSE) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = section_name)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~section_name, ncol = 2, scales = "free") +
+  labs(x = "tf-idf", y = NULL)
+```
+```{r}
+lead_para <- bidenassess %>% 
+  unnest_tokens(bigram, lead_paragraph, token = "ngrams", n = 2) %>% # what is n if it is a bigram?
+  filter(!is.na(bigram)) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  anti_join(stop_words, by = c("word1"= "word" )) %>% 
+  anti_join(stop_words, by = c("word2" = "word" )) %>% 
+  count(section_name, word1, word2, sort = TRUE) %>% 
+  ungroup()
+```
+
+```{r}
+afinn <- get_sentiments("afinn") 
+
+
+by_w1 <- lead_para %>%
+  inner_join(afinn, by = c(word1 = "word")) %>%
+  count(section_name, word1, word2, value, sort = TRUE) %>% 
+  mutate(bigram = paste(word1, word2))
+
+by_w2 <- lead_para %>%
+  inner_join(afinn, by = c(word2 = "word")) %>%
+  count(word1, word2, value, sort = TRUE)
+```
+
+```{r}
+by_w1 %>% 
+  mutate(contribution = n * value) %>% #the lexicon value times the number of times the word appears
+  arrange(desc(abs(contribution))) %>%
+  head(20) %>%
+  ggplot(aes(n * value, bigram, fill = n * value > 0)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = "Sentiment value * number of occurrences",
+       y = "Words")
+```
+
+```{r}
+keyword_df <- bidenassess %>% 
+  group_by(section_name) %>% 
+  unnest_tokens(word, keywords) %>% 
+  anti_join(stop_words) %>% 
+  count(section_name, word) %>% 
+  ungroup()
+
+
+total_words <- keyword_df %>% 
+   group_by(section_name) %>% 
+  summarize(total = sum(n)) %>% 
+  ungroup()
+
+keyword_df <- keyword_df %>% 
+  left_join(total_words, by = c("section_name" = "section_name")) %>%
+  anti_join(mystopwords, by = c("word" = "word")) %>% 
+  filter(n > 1) %>% 
+  bind_tf_idf(section_name, word, n) %>% 
+  group_by(section_name) %>%
+  slice_max(tf_idf, n = 15, with_ties = FALSE) %>%
+  ungroup() 
+```
+
+```{r}
+keyword_df %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("maroon", "#E6AB02"),
+                   max.words = 100)
+```
+```{r}
+set.seed(451)
+bidenassess %>% 
+  unnest_tokens(bigram, keyword, token = "ngrams", n = 3) %>% # what is n if it is a bigram?
+  filter(!is.na(bigram)) %>% 
+  separate(bigram, c("word1", "word2", "word3"), sep = " ") %>% 
+  anti_join(stop_words, by = c("word1"= "word" )) %>% 
+  anti_join(stop_words, by = c("word2" = "word" )) %>% 
+  anti_join(stop_words, by = c("word3" = "word" )) %>%
+  mutate(trigram = paste(word1, word2, word3)) %>% 
+  count(trigram) %>% 
+  filter(n > 1) %>% 
+  with(wordcloud(trigram, n, max.words = 100))
+```
+
