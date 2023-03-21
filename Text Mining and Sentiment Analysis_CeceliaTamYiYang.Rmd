@@ -43,27 +43,27 @@ library(ggraph) #to visualize the igraph object by turning it into ggraph with a
 
 ## The tidy text format & Document-Term Matrix(DTM)
 
-* We define the tidy text format as being a table with one-token-per-row. This means that:
+* According to the "Text Mining with R" textbook, the tidy text format is a table with one-token-per-row. This means that:
   + Each variable is a column
   + Each observation is a row
   + Each type of observation unit is a table
 Therefore, a token is a meaningful unit of text, like a word, that we as data scientists are interested in analyzing. 
 For tidy text mining, we may want to do a process called tokenization which splits words into tokens and then allows us to normally analyze by word. 
 
-* DTM is one of the most common structure that text mining work with, where
+* In chapter 5 of "Text Mining with R", DTM is one of the most common structure that text mining work with, where
   + Each row represents a document (book or article)
   + Each column represents one term.
   + Each value (typically) contains the number of appearances of that term in that document.
-  
-Why do we need DTM format? Most of the existing R tools for natural language processing, besides the tidytext package, aren’t compatible with tidy format, so it's important to know the “glue” that connects the tidy text format with other important packages and data structures, allowing you to rely on both existing text mining packages and the suite of tidy tools to perform your analysis.
 
-DTM objects cannot be used directly with tidy tools, just as tidy data frames cannot be used as input for most text mining packages. Thus, the tidytext package provides two verbs that convert between the two formats.
+
+Since DTM objects and and tidy data frames are two incompactible objects, we cannot use tidy tools to analyze a DTM object. Tidytext package provides two functions that convert between these two formats:
 
 + tidy() turns a DTM to a tidy dataframe.
 + cast() turns a tidy one term per row dataframe to a matrix.
 
 ```{r}
 # DTM
+# Install the package AssociatedPress before you run this code chunk
 data("AssociatedPress", package = "topicmodels")
 
 # tidying a DTM
@@ -74,10 +74,7 @@ ap_td
 ap_sentiments <- ap_td %>% 
   inner_join(get_sentiments("bing"), by = c(term = "word"))
 
-# As we’ve seen in previous chapters, this form is convenient for analysis with the dplyr, 
-# tidytext and ggplot2 packages. For example, you can perform sentiment analysis on these newspaper articles
-# by joining tidy dataframe with sentiments dataset ('bing', 'nrc', 'afinn', 'loughran').
-
+# Here is an example from the "Text Mining with R"
 ap_sentiments %>% 
   count(sentiment, term, wt = count) %>% 
   ungroup() %>% 
@@ -130,7 +127,7 @@ tidy_books <- tidy_books %>%
 ```
 
 ## Practice
-1. Find the most common words in all the tidy_books books as a whole. Create a visualization via ggplot in how you think best fits the data you get. 
+1. Find the most common words in all the tidy_books books as a whole. Create a visualization via ggplot to show the most common words in Jane Austen books. 
 ```{r}
 tidy_books
 
@@ -145,10 +142,18 @@ Another package we will be using for our sentiment analysis is the gutenbergr pa
 Let's look at some of the Bronte sisters' works. 
 
 ## Practice
-How would we clean this dataset to prep it for sentiment analysis (think unnest_tokens and anti_join)? From there, how would we find the the most common words in the novels?
+2. To do: Pepare the gutenberg dataset for the Bronte sisters for sentiment analysis (hint: think unnest_tokens and anti_join). From there, how would we find the the most common words in the novels?
 
 ```{r}
 bronte <- gutenberg_download(c(1260, 768, 969, 9182, 767))
+
+## What would we insert in the in the parentheses?
+bronte %>%
+  unnest_tokens(???, ???) %>%
+  anti_join(????)
+
+## Now, use previous examples to find the most common words
+
 ```
 
 ## Section Practice
@@ -164,7 +169,7 @@ mutate(tidy_books, author = "Jane Austen"))
 ```
 
 
-How would we plot this?
+How would we plot this (hint: use ggplot)?
 ```{r}
 
 ```
@@ -481,21 +486,3 @@ n-grams are adjacent words. What about words that usually appear together but ar
 <https://www.tidytextmining.com/ngrams.html>(please use this link for more resources)
 
 
-## Demo of popular function
-(unest_tokens(), joins for the tibbles)
-- ok your turn!! --> Decide which book or books!
--- testing correlation
--- maybe give an optional challenge problem from the later chapters?
-
-Everything we have taught into one activity
-
-
-## Notes
-+ There needed to be more of a concise definition on what the lexicons are, specifically the one we used. The code chunks made a lot of sense and the flow of the document made sense for the person that was doing the activities
-+ It would be better to explain the relationship between DTM and tidy df and tell the audience the pros and cons of each.
-+ Do a demo of text cleaning and visualization before jumping into the wrangling part. 
-
-## What we improved
-+ We took the feedback about the lexicon details and added that in. We also spell checked the document again and added some more details. 
-+ We added the background info about tidy df and DTM, especially how to change the format between those.
-+ We made a demo of how to perform a basic sentiment visualization with sentiment dataset and text df.
