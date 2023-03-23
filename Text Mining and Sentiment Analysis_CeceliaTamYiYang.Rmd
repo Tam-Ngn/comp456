@@ -432,57 +432,42 @@ negation_words <- c("not", "no", "never", "without")
 
 ### Visualizing a network of bigrams with ggraph
 
-We may be interested in visualizing all of the relationships among words simultaneously, rather than just the top few at a time. As one common visualization, we can arrange the words into a network, or “graph.” Here we’ll be referring to a “graph” not in the sense of a visualization, but as a combination of connected nodes. A graph can be constructed from a tidy object since it has three variables:
-
-from: the node an edge is coming from
-to: the node an edge is going towards
-weight: A numeric value associated with each edge
-
-
+Some people may want to see an overarching picture of the relationships between the words/phrases, all at once. This can by done through a directed network or a directed graph. Run the following code chunks to see what this looks like!
 
 ```{r eval=FALSE}
 # prepare data for graphing the bigram network
-bigram <- austen_bigrams %>% 
-  separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  filter(!word1 %in% stop_words$word) %>% 
-  filter(!word2 %in% stop_words$word) %>% 
-  count(word1, word2, sort = TRUE) %>% 
+bigram <- austen_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = "") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  count(word1, word2, sort = TRUE) %>%
   filter(n > 20) # pull bigrams with n > 20
-
 bigram
 ```
 
-
 ```{r eval=FALSE}
-bigram_graph <- bigram %>% 
+bigram_graph <- bigram %>%
   graph_from_data_frame() #create framwork for the network
-
 bigram_graph
-
 ```
 
 ```{r fig.width= 4}
 #create the network
-
 set.seed(456) #the node positions are random
-
 a <- grid::arrow(type = "closed", length = unit(.1, "inches")) #create arrows to specify word1 and word2
-
 ggraph(bigram_graph, layout = "fr") +
   geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
-                 arrow = a, end_cap = circle(.05, 'inches')) +
+                 arrow = a, end_cap = circle(.05, "inches")) +
   geom_node_point(color = "lightblue", size = 4) +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
   theme_void()
-
 ```
 
-n-grams are adjacent words. What about words that usually appear together but are not adjacent?
+We can ask a more daring and bolder question: How can we establish relationships between words that are not n-grams but usually appear together?
+Specifically, a language has many umbrellas of associated words like `school`, `teachers`, `students` and `classes`. If one word appears in a text, it is highly likely one of the words in that family will appear sometime later too. Pairwise correlation explores this question in further detail.
 
 *optional*
-
 ### Pairwise correlation
-
 <https://www.tidytextmining.com/ngrams.html>(please use this link for more resources)
 
 
