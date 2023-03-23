@@ -56,7 +56,7 @@ for (i in 1:length(totalarticles$webUrl)) {
   body_text_tot <- bind_rows(body_text_tot, body_text_coll)
 }
 
-save(body_text_tot, file = "guardian2021_text.RData")
+# save(body_text_tot, file = "guardian2021_text.RData")
 
 
 
