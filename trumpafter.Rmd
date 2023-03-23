@@ -1,7 +1,7 @@
 ---
-title: "bidenexploratory"
+title: "trumpafter"
 author: '" "'
-date: '2023-03-09'
+date: '2023-03-22'
 output: html_document
 ---
 
@@ -20,23 +20,22 @@ library(tidytext)
 library(broom)
 library(reshape2)
 data("stop_words")
-load("C:/Users/cecei/Desktop/comp465/bidenarticles.RData")
-mystopwords <- tibble(word = c(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg")))
+load("C:/Users/cecei/Desktop/comp465/trumparticlesafter.RData")
+mystopwords <- tibble(word = c(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here's", "sanders", "joseph", "it's", "here's", "jr", "vice")))
 ```
 
-
 ```{r}
-biden <- bidenarticles %>% 
+trump <- trumparticlesafter %>% 
   unnest(headline) %>% 
   select(abstract, snippet, lead_paragraph, main, pub_date, section_name)
 
-tidy_biden_main <- biden %>% 
+tidy_trump_main <- trump %>% 
   unnest_tokens(word, main) %>% 
   anti_join(stop_words) %>% 
   anti_join(mystopwords) %>% 
   count(word, sort = TRUE)
 
-tidy_biden_main %>% 
+tidy_trump_main %>% 
   inner_join(get_sentiments("bing")) %>% 
   group_by(sentiment) %>% 
   slice_max(n, n = 10) %>% 
@@ -46,30 +45,24 @@ tidy_biden_main %>%
   facet_wrap(~sentiment, scales = "free_y") +
   labs(x = "Contribution to sentiment",
        y = NULL)
-ggsave("bidensentiment.png")
 ```
-
-
-
 ```{r}
-tidy_biden_main %>%
+tidy_trump_main %>%
   with(wordcloud(word, n, max.words = 50))
 ```
-
-
 ```{r}
-biden_mix <- tibble(word = paste(bidenarticles$abstract, 
-                                 bidenarticles$snippet, 
-                                 bidenarticles$lead_paragraph, 
-                                 bidenarticles$headline$main))
+trump_mix <- tibble(word = paste(trumparticlesafter$abstract, 
+                                 trumparticlesafter$snippet, 
+                                 trumparticlesafter$lead_paragraph, 
+                                 trumparticlesafter$headline$main))
 
-tidy_biden_mix <- biden_mix %>% 
+tidy_trump_mix <- trump_mix %>% 
   unnest_tokens(word, word) %>% 
   anti_join(stop_words) %>% 
   anti_join(mystopwords) %>% 
   count(word, sort = TRUE)
 
-tidy_biden_mix %>% 
+tidy_trump_mix %>% 
   inner_join(get_sentiments("bing")) %>% 
   group_by(sentiment) %>% 
   slice_max(n, n = 10) %>% 
@@ -80,15 +73,16 @@ tidy_biden_mix %>%
   labs(x = "Contribution to sentiment",
        y = NULL)
 
-tidy_biden_mix %>%
+tidy_trump_mix %>%
   with(wordcloud(word, n, max.words = 50))
 ```
+
 ```{r}
-section_words <- tibble(word = paste(bidenarticles$abstract, 
-                                     bidenarticles$snippet, 
-                                     bidenarticles$lead_paragraph, 
-                                     bidenarticles$headline$main),
-                        section = bidenarticles$section_name) %>% 
+section_words <- tibble(word = paste(trumparticlesafter$abstract, 
+                                     trumparticlesafter$snippet, 
+                                     trumparticlesafter$lead_paragraph, 
+                                     trumparticlesafter$headline$main),
+                        section = trumparticlesafter$section_name) %>% 
   unnest_tokens(word, word) %>% 
   count(section, word, sort = TRUE)
 
@@ -111,22 +105,20 @@ section_tf_idf %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~section, ncol = 2, scales = "free") +
   labs(x = "tf-idf")
-
 ```
-
 ```{r}
-biden_bigrams <- tibble(word = paste(bidenarticles$abstract, 
-                                     bidenarticles$snippet, 
-                                     bidenarticles$lead_paragraph, 
-                                     bidenarticles$headline$main),
-                        section = bidenarticles$section_name) %>% 
+trump_bigrams <- tibble(word = paste(trumparticlesafter$abstract, 
+                                     trumparticlesafter$snippet, 
+                                     trumparticlesafter$lead_paragraph, 
+                                     trumparticlesafter$headline$main),
+                        section = trumparticlesafter$section_name) %>% 
   unnest_tokens(bigram, word, token = "ngrams", n = 2) %>% 
   filter(!is.na(bigram))
 
-biden_bigram_sep <- biden_bigrams %>% 
+trump_bigram_sep <- trump_bigrams %>% 
   separate(bigram, c("word1", "word2"), sep = " ")
 
-section_bigram_tf_idf <- biden_bigram_sep %>% 
+section_bigram_tf_idf <- trump_bigram_sep %>% 
   filter(!word1 %in% stop_words$word) %>% 
   filter(!word1 %in% mystopwords$word) %>% 
   filter(!word2 %in% stop_words$word) %>% 
@@ -146,7 +138,7 @@ section_bigram_tf_idf %>%
   facet_wrap(~section, ncol = 2, scales = "free") +
   labs(x = "tf-idf")
 
-bigram_graph <- biden_bigram_sep %>% 
+bigram_graph <- trump_bigram_sep %>% 
   filter(!word1 %in% stop_words$word) %>% 
   filter(!word1 %in% mystopwords$word) %>% 
   filter(!word2 %in% stop_words$word) %>% 
@@ -154,31 +146,20 @@ bigram_graph <- biden_bigram_sep %>%
   count(word1, word2, sort = TRUE) %>% 
   filter(n > 70) %>% 
   graph_from_data_frame()
-
-set.seed(2020)
-a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
-
-ggraph(bigram_graph, layout = "fr") +
-  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
-                 arrow = a, end_cap = circle(.07, 'inches')) +
-  geom_node_point(color = "lightblue", size = 3) +
-  geom_node_text(aes(label = name), vjust = 0.2, hjust = 0.2) +
-  theme_void()
 ```
-
 ```{r}
-biden_trigrams <- tibble(word = paste(bidenarticles$abstract, 
-                                      bidenarticles$snippet, 
-                                      bidenarticles$lead_paragraph, 
-                                      bidenarticles$headline$main),
-                        section = bidenarticles$section_name) %>% 
+trump_trigrams <- tibble(word = paste(trumparticlesafter$abstract, 
+                                      trumparticlesafter$snippet, 
+                                      trumparticlesafter$lead_paragraph, 
+                                      trumparticlesafter$headline$main),
+                        section = trumparticlesafter$section_name) %>% 
   unnest_tokens(trigram, word, token = "ngrams", n = 3) %>% 
   filter(!is.na(trigram))
 
-biden_trigram_sep <- biden_trigrams %>% 
+trump_trigram_sep <- trump_trigrams %>% 
   separate(trigram, c("word1", "word2", "word3"), sep = " ")
 
-biden_trigram_sep %>% 
+trump_trigram_sep %>% 
   filter(!word1 %in% stop_words$word) %>% 
   filter(!word1 %in% mystopwords$word) %>% 
   filter(!word2 %in% stop_words$word) %>% 
