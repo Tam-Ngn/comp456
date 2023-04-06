@@ -197,7 +197,7 @@ So what is sentiment analysis? Sentiment Analysis allows us to analyze the emoti
 
 How are sentiment lexicons created and validated? They are constructed either via crowdsourcing or by an individual which they was validated using crowdsourcing, restaurant or movie reviews, or Twitter data. 
 
-There are a few different lexicon databases that can be used to do sentiment analysis (read more here <>) but for this we will use the nrc lexicon. 
+There are a few different lexicon databases that can be used to do sentiment analysis (read more here <https://bookdown.org/Maxine/tidy-text-mining/the-sentiments-dataset.html>) but for this we will use the nrc lexicon. 
 
 ```{r}
 get_sentiments("nrc")
