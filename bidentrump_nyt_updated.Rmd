@@ -1,0 +1,269 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE, tidy = FALSE, message = FALSE, cache.extra = packageVersion("tufte"))
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(urltools)
+library(scales)
+library(textdata)
+library(wordcloud)
+library(igraph) 
+library(ggplot2)
+library(tidytext)
+library(broom)
+library(reshape2)
+library(rvest)
+library(igraph)
+library(tm)
+library(ggraph)
+data("stop_words")
+load("C:/Users/cecei/Desktop/comp465/Pull Requests Data/bidenarticles.RData")
+load("C:/Users/cecei/Desktop/comp465/Pull Requests Data/bidenarticlesafter.RData")
+load("C:/Users/cecei/Desktop/comp465/Pull Requests Data/bidenarticle_text.RData")
+mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
+```
+
+
+```{r}
+bidenbefore <- bidenarticles %>% 
+  unnest(headline) %>% 
+  select(abstract, snippet, lead_paragraph, main, pub_date, section_name, web_url)
+```
+
+
+```{r}
+bidenafter <- bidenarticlesafter %>% 
+  unnest(headline) %>% 
+  select(abstract, snippet, lead_paragraph, main, pub_date, section_name, web_url)
+
+```
+
+
+#Biden Articles Before
+
+##  Data Cleaning
+```{r}
+
+tidy_body_text_tot <- full_text %>%
+  mutate(text = str_remove_all(body_text, "[:punct:]")) %>% 
+  filter(text != "")
+
+
+tidy_biden <- tidy_body_text_tot %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  count(word, sort = TRUE)
+
+#with one word
+tidy_biden %>% 
+  inner_join(get_sentiments("bing")) %>% 
+  group_by(sentiment) %>% 
+  slice_max(n, n = 10) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  # what is the scale here?
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+
+```
+
+```{r}
+section_words <- bidenbefore %>% 
+  select(web_url, section_name) %>%
+  plyr::rename(c("web_url" = "url")) %>% 
+  left_join(tidy_body_text_tot, by = "url") %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  count(section_name, word, sort = TRUE)
+
+
+tot_words <- section_words %>% 
+  group_by(section_name) %>% 
+  summarize(total = sum(n))
+
+section_words <- left_join(section_words, tot_words, by = "section_name")
+
+section_tf_idf <- section_words %>% 
+  bind_tf_idf(word, section_name, n) %>% 
+  arrange(desc(tf_idf))
+
+section_tf_idf %>% 
+  filter(section_name %in% c("U.S.", "Opinion", "Briefing", "	
+Business Day", "World")) %>% 
+  group_by(section_name) %>% 
+  slice_max(tf_idf, n = 10) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = tf_idf, y = fct_reorder(word, tf_idf), fill = section_name)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~section_name, ncol = 2, scales = "free") +
+  labs(x = "tf-idf")
+
+```
+
+
+
+```{r}
+biden_bigrams <- tibble(word = paste(bidenarticles$abstract, 
+                                     bidenarticles$snippet, 
+                                     bidenarticles$lead_paragraph, 
+                                     bidenarticles$headline$main),
+                        section = bidenarticles$section_name) %>% 
+  unnest_tokens(bigram, word, token = "ngrams", n = 2) %>% 
+  filter(!is.na(bigram))
+
+biden_bigram_sep <- biden_bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+section_bigram_tf_idf <- biden_bigram_sep %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word1 %in% mystopwords$word) %>% 
+  filter(!word2 %in% stop_words$word) %>% 
+  filter(!word2 %in% mystopwords$word) %>% 
+  unite(bigram, word1, word2, sep = " ") %>% 
+  count(section, bigram, sort = TRUE)
+
+section_bigram_tf_idf %>% 
+  bind_tf_idf(bigram, section, n) %>% 
+  arrange(desc(tf_idf)) %>% 
+  filter(section %in% c("U.S.", "Opinion", "World", "Business Day", "Podcasts")) %>% 
+  group_by(section) %>% 
+  slice_max(tf_idf, n = 10) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = tf_idf, y = fct_reorder(bigram, tf_idf), fill = section)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~section, ncol = 2, scales = "free") +
+  labs(x = "tf-idf")
+
+bigram_graph <- biden_bigram_sep %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word1 %in% mystopwords$word) %>% 
+  filter(!word2 %in% stop_words$word) %>% 
+  filter(!word2 %in% mystopwords$word) %>% 
+  count(word1, word2, sort = TRUE) %>% 
+  filter(n > 70) %>% 
+  graph_from_data_frame()
+
+set.seed(2020)
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 3) +
+  geom_node_text(aes(label = name), vjust = 0.2, hjust = 0.2) +
+  theme_void()
+```
+
+
+```{r}
+biden_bigram_sep %>%
+  filter(word2 == "virus") %>%
+  count(word1, word2, sort = TRUE)
+viruswords <- biden_bigram_sep %>%
+  filter(word2 == "virus") %>%
+  inner_join("AFINN", by = c(word1, "word"))
+
+```
+
+
+## Trigram Results
+
+```{r}
+biden_trigram <- tibble(word = paste(bidenarticles$headline$main)) %>%
+    unnest_tokens(trigram, word, token = "ngrams", n = 3) %>% 
+  filter(!is.na(trigram))
+
+biden_trigram_sep <- biden_trigram %>% 
+  separate(trigram, c("word1", "word2", "word3"), sep = " ")
+
+biden_trigram_sep %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word1 %in% mystopwords$word) %>% 
+  filter(!word2 %in% stop_words$word) %>% 
+  filter(!word2 %in% mystopwords$word) %>% 
+  filter(!word3 %in% stop_words$word) %>% 
+  filter(!word3 %in% mystopwords$word) %>% 
+  count(word1, word2, word3, sort = TRUE) %>%
+  unite(trigram, word1, word2, word3, sep = " ")
+
+```
+
+```{r}
+# Making a graph of positive v.s. negative by section on ratio aspect
+section_words %>% 
+  anti_join(stop_words, by = "word") %>% 
+  anti_join(mystopwords, by = "word") %>% 
+  inner_join(get_sentiments("bing"), by = "word") %>% # I'm using "bing" package here to count the quant of positive and negative words
+  group_by(sectionName, sentiment) %>% 
+  summarize(quant = sum(n)) %>% 
+  group_by(sectionName) %>% 
+  mutate(ratio = quant/sum(quant)) %>% 
+  ggplot(aes(x = sectionName, y = ratio, fill = sentiment)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        legend.title = element_blank()) +
+  labs(title = "The New York Times View on Biden in 2020",
+       subtitle = "The Ratio of Positive & Negative Words by Section ('bing')") +
+  xlab("") +
+  ylab("Ratio")
+```
+```{r}
+section_words %>% 
+  anti_join(stop_words, by = "word") %>% 
+  anti_join(mystopwords, by = "word") %>% 
+  inner_join(get_sentiments("afinn"), by = "word") %>%  # I used "afinn" package here to get the score of each word
+  group_by(sectionName, word) %>% 
+  summarize(score = n*value) %>% 
+  ungroup() %>% 
+  mutate(sentiment = ifelse(score > 0, "positive", "negative")) %>% 
+  group_by(sectionName, sentiment) %>% 
+  summarize(cum_score = sum(abs(score))) %>% 
+  mutate(ratio = cum_score/sum(cum_score)) %>% 
+  ggplot(aes(x = sectionName, y = ratio, fill = sentiment)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        legend.title = element_blank()) +
+  labs(title = "The New York Times View on Biden in 2020",
+       subtitle = "The Ratio of Positive & Negative Score by Section ('afinn')") +
+  xlab("") +
+  ylab("Ratio")
+```
+
+# Biden Articles After
+```{r}
+tidy_body_text_tot_bidenafter <- text_biden_after %>%
+  mutate(text = str_remove_all(body_text, "[:punct:]")) %>% 
+  filter(text != "")
+
+
+tidy_biden <- tidy_body_text_tot %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  count(word, sort = TRUE)
+
+#with one word
+tidy_biden %>% 
+  inner_join(get_sentiments("bing")) %>% 
+  group_by(sentiment) %>% 
+  slice_max(n, n = 10) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  # what is the scale here?
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+
+```
+
+
+# Trump Before 
+
+# Trump After
