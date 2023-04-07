@@ -30,7 +30,7 @@ for(i in d){
 }
 
 
- save(trumpntyarticlesbefore, file = "trumparticlesbefore.RData")
+ # save(trumpntyarticlesbefore, file = "trumparticlesbefore.RData")
  
 
  
@@ -47,6 +47,6 @@ for (i in 1:length(totalarticles$web_url)) {
   body_text_tot <- bind_rows(body_text_tot, body_text_coll)
 }
 
-save(trumpntyarticlesbefore, file = "trumparticlesbefore.RData")
+# save(trumpntyarticlesbefore, file = "trumparticlesbefore.RData")
 
 
