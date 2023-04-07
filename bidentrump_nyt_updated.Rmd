@@ -24,6 +24,9 @@ mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden"
 ```
 
 
+# Loading Biden and Trump New York Times Data and Selecting Info
+
+## Biden Article Datasets
 ```{r}
 bidenbefore <- bidenarticles %>% 
   unnest(headline) %>% 
@@ -35,15 +38,14 @@ bidenbefore <- bidenarticles %>%
 bidenafter <- bidenarticlesafter %>% 
   unnest(headline) %>% 
   select(abstract, snippet, lead_paragraph, main, pub_date, section_name, web_url)
-
 ```
+
 
 
 #Biden Articles Before
 
 ##  Data Cleaning
 ```{r}
-
 tidy_body_text_tot <- full_text %>%
   mutate(text = str_remove_all(body_text, "[:punct:]")) %>% 
   filter(text != "")
@@ -260,6 +262,20 @@ tidy_biden %>%
   facet_wrap(~sentiment, scales = "free_y") +
   labs(x = "Contribution to sentiment",
        y = NULL)
+
+```
+
+# Trump NYT
+
+
+## Trump Articles Dataset
+
+```{r}
+
+```
+
+
+```{r}
 
 ```
 

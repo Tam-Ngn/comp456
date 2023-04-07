@@ -26,8 +26,8 @@ library(readxl)
 library(tidyverse)
 
 text_biden_after <- NULL
-for(i in 1:2)
-  #for (i in 1:length(bidenarticlesafter$web_url)) 
+#for(i in 1:2)
+  for (i in 1:length(bidenarticlesafter$web_url)) 
 {
   article <- read_html(bidenarticlesafter$web_url[i]) 
   body_text <-
