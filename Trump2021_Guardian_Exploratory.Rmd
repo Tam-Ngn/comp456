@@ -25,8 +25,8 @@ library(ggraph)
 data("stop_words")
 mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s"))
 
-load("guardian2021.RData")
-load("guardian2021_text.RData")
+load("Articles Data/guardian2021.RData")
+load("Articles Data/guardian2021_text.RData")
 ```
 
 
@@ -141,6 +141,7 @@ ggraph(bigram_graph, layout = "fr") +
 
 ```{r}
 # Making a graph of positive v.s. negative by section on ratio aspect
+# TO DO: try it again after you get all the articles from guardian 2021
 section_words %>% 
   anti_join(stop_words, by = "word") %>% 
   anti_join(mystopwords, by = "word") %>% 
@@ -163,6 +164,7 @@ section_words %>%
 
 ```{r}
 # Still a graph of positive v.s. negative by section on ratio aspect
+# TO DO: same as above.
 section_words %>% 
   anti_join(stop_words, by = "word") %>% 
   anti_join(mystopwords, by = "word") %>% 
@@ -184,4 +186,49 @@ section_words %>%
   xlab("") +
   ylab("Ratio")
 ```
+
+```{r}
+# Graph of sentiment score by month with package "afinn".
+# might wanna combine guardian score with nytimes score and see the comparison in a single graph
+# TO DO: pull all the 2021 articles from nytimes and guardian.
+tidy_body_text_tot %>% 
+  rename(webUrl = url) %>% 
+  left_join(totalarticles, by = "webUrl") %>% 
+  select(webPublicationDate, text) %>% 
+  mutate(date = str_trunc(webPublicationDate, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date) %>% 
+  summarize(tot_score = sum(value)) %>% 
+  ggplot(aes(x = date, y = tot_score, group = 1)) +
+  geom_line() + 
+  scale_colour_brewer(palette = "Set1") +
+  scale_x_date(date_breaks="1 month", date_labels="%m-%Y") +
+  labs(title = "Guardian 2021",
+       subtitle = "Sentiment Score for Trump by Month") +
+  xlab("") +
+  ylab("Score") +
+  theme_classic()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

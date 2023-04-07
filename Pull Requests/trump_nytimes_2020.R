@@ -10,7 +10,7 @@ articles <- req$response$docs
 link = "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump"
 
 
-dates <- ymd('20200101') + 0:1096
+dates <- ymd('20200101') + 0:365
 d <- format(dates,'%Y%m%d')
 
 totalarticles <- NULL
@@ -25,7 +25,7 @@ for(i in d){
     totalarticles <- bind_rows(totalarticles,articles)
     if(isTRUE(nrow(articles)) && nrow(articles) != 10){ break }
     else{p = p+1}
-    Sys.sleep(6)
+    Sys.sleep(12)
   }
 }
 
