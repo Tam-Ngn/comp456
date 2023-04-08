@@ -322,6 +322,76 @@ tidy_biden %>%
 
 # The Guardian: Trump
 ## The Guardian: Trump Before
+
+```{r}
+load("Guardian_Trump_Before_API.RData")
+```
+
+
+```{r lowercase and punct removed}
+g_t_aug2019_jun2020$webTitle = str_replace_all(g_t_aug2019_jun2020$webTitle, "\\'s|[:punct:]", "")
+```
+
+
+
+```{r prepare the data}
+g_t_section_words <- g_t_aug2019_jun2020 %>%
+  select(webTitle,sectionName ) %>% 
+  unnest_tokens(word, webTitle) 
+
+
+g_t_section_words%>%
+  filter(!word %in% stop_words$word) %>% 
+   pairwise_count(word, sectionName, sort = TRUE)
+
+
+```
+
+
+```{r words associated with Trump}
+g_t_section_words %>%  
+  group_by(word) %>%
+  filter(n() > 10) %>% 
+  pairwise_cor(word, sectionName, sort = TRUE) %>% 
+  filter(!item1 %in% stop_words$word, !item2 %in% stop_words$word) %>% 
+  filter(item1 %in% c("trump")) %>% 
+  slice_max(correlation, n = 20, with_ties = TRUE) %>% 
+  ggplot()+
+  geom_col(aes(y = fct_reorder(item2, correlation), x = correlation), fill = "orange")+
+  labs(title = "Words Usually Correlated With Trump in The Guardian's Article Titles",
+       y = "")+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = "lightyellow", color = NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+the word "trump" has the highest correlation with the word "world". And on its own, "world" doesn't imply anything other than its literal meaning. so we wondered what words tend to appear with "world"?
+
+```{r words associated with world}
+g_t_section_words %>%  
+  group_by(word) %>%
+  filter(n() > 10) %>% 
+  pairwise_cor(word, sectionName, sort = TRUE) %>% 
+  filter(!item1 %in% stop_words$word, !item2 %in% stop_words$word) %>% 
+  filter(item1 %in% c("world")) %>% 
+  slice_max(correlation, n = 20, with_ties = TRUE) %>% 
+  ggplot()+
+  geom_col(aes(y = fct_reorder(item2, correlation), x = correlation), fill = "orange")+
+  labs(title = "Words Usually Correlated With World in The Guardian's Article Titles",
+       y = "")+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = "lightyellow", color = NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+top 2 are "war" and "fight", which carry heavily negative connatations.
+
+
+Again, we acknowledge the limtations in our method that without specific context, words can have various meanings, depending on our own interpretation. For example, war here can either mean "trade war" or "nuclear war", we however are unable to determine which of these variations is being refered to here.
+
+
 ## The Guardian: Trump After
 
 
