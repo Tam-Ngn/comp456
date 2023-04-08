@@ -104,7 +104,7 @@ tidy_biden %>%
        y = NULL)
 ```
 
-SENTENCE HERE
+In terms of Biden articles before the election, the word that is most negatively reflected in the articles body text is the word "issue" and the most positively is "support". 
 
 ```{r}
 section_words <- bidenbefore %>% 
@@ -140,7 +140,7 @@ Business Day", "World")) %>%
 
 ```
 
-SENTENCE HERE
+The tf-idf is a measure to show how important a word is in a document or in a collection of texts. Therefore, this graph shows the most "important" words for each of the different article sections. 
 
 
 ```{r}
@@ -195,8 +195,7 @@ ggraph(bigram_graph, layout = "fr") +
   theme_void()
 ```
 
-SENTENCE HERE
-
+Similarly, the first graph shows the bigrams (or the two word phrase) that is most popular or most important by section. The second graph shows a word network, or how different words connect to each other. 
 
 ```{r}
 biden_trigram <- tibble(word = paste(bidenarticles$headline$main)) %>%
@@ -218,7 +217,7 @@ biden_trigram_sep %>%
 
 ```
 
-SENTENCE HERE
+This table shows the trigrams, or the most common three word phrases. 
 
 
 ```{r}
@@ -264,7 +263,7 @@ section_words %>%
   ylab("Ratio")
 ```
 
-SENTENCES HERE
+Both of these graphs show the ratio of positive to negative words by section for Biden articles in the NYT. This depends on different lexicons, bing versus afinn. 
 
 ## New York Times: Biden After
 
@@ -284,7 +283,7 @@ bidenafter <- bidenarticlesafter %>%
   select(abstract, snippet, lead_paragraph, main, pub_date, section_name, web_url)
 
 tidy_body_text_tot_bidenafter <- text_biden_after %>%
-  mutate(text = str_remove_all(body_text, "[:punct:]")) %>% 
+  mutate(text = str_remove_all(text, "[:punct:]")) %>% 
   filter(text != "")
 
 
@@ -306,6 +305,27 @@ tidy_biden %>%
   facet_wrap(~sentiment, scales = "free_y") +
   labs(x = "Contribution to sentiment",
        y = NULL)
+```
+
+In terms of Biden articles after the election, the word that is most negatively reflected in the articles body text is the word "issue" and the most positively is "support".
+
+```{r}
+section_words <- bidenafter %>% 
+  select(web_url, section_name) %>%
+  plyr::rename(c("web_url" = "url")) %>% 
+  left_join(tidy_body_text_tot, by = "url") %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  count(section_name, word, sort = TRUE)
+
+
+bidenaftertot_words <- section_words %>% 
+  group_by(section_name) %>% 
+  summarize(total = sum(n))
+
+section_words <- left_join(section_words, tot_words, by = "section_name")
+
 ```
 
 

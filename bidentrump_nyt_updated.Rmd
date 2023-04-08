@@ -20,6 +20,7 @@ data("stop_words")
 load("C:/Users/cecei/Desktop/comp465/Articles Data/bidenarticles.RData")
 load("C:/Users/cecei/Desktop/comp465/Articles Data/bidenarticlesafter.RData")
 load("C:/Users/cecei/Desktop/comp465/Articles Data/bidenarticle_text.RData")
+load("C:/Users/cecei/Desktop/comp465/Articles Data/bidenarticlesafter_text.RData")
 mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
 ```
 
@@ -105,6 +106,8 @@ Business Day", "World")) %>%
   labs(x = "tf-idf")
 
 ```
+
+
 
 
 
@@ -271,8 +274,8 @@ tidy_biden %>%
 ## Trump Articles Dataset
 
 ```{r}
-load("C:/Users/cecei/Desktop/comp465/Articles  Data/trumparticlesbefore.RData")
-
+load("C:/Users/cecei/Desktop/comp465/Articles Data/trump_nytimes_2020.RData")
+load("C:/Users/cecei/Desktop/comp465/Articles Data/trump_nytimes_2020_text.RData")
 ```
 
 
