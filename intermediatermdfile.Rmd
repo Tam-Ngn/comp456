@@ -1,13 +1,103 @@
 ---
-title: "2020-2 data"
-author: '" "'
+title: "The 2020 Presidental Election: A Sentimen Analysis of the News Media Coverage on Joe Biden and Donald Trump"
+author: "Cecelia Kaufmann, Tam Nguyen, Yiyang Shi"
 date: '2023-02-28'
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(readr)
-library(haven)
+knitr::opts_chunk$set(echo = TRUE, error = TRUE, tidy = FALSE, message = FALSE, cache.extra = packageVersion("tufte"))
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(urltools)
+library(scales)
+library(textdata)
+library(wordcloud)
+library(igraph) 
+library(ggplot2)
+library(tidytext)
+library(broom)
+library(reshape2)
+library(rvest)
+library(igraph)
+library(tm)
+library(ggraph)
 ```
+
+# Group Members
+The group members are Cecelia Kaufmann, Tam Nguyen, Yiyang Shi
+
+# Area We Are Working In/ Brief Descrption of the Project
+
+We are working in politics, particularly looking at the media portrayal of Donald Trump and Joe Biden leading up to the 2020 election and immediately following (up to a year afterwards). To add nuance, we decided to also look at the difference between the New York Times (a U.S. based/ domestic newspaper) versus the Guardian (a U.K. based/ international newspaper). From there, we plan to use sentiment analysis to analyze both the context of words and the tone of the headlines (positive and negative) in their portrayal of the candidate. 
+
+# Research Question
+
+How Differently Did Domestic Newspapers and International Newspapers Portray Donald Trump and Joe Biden before and after The 2020 U.S. Presidential Election?
+
+Part of why we are interested in looking at both before and after is we hope that this will give a full scope and a plethora of data to analyze using sentiment analysis. We can also look changes in the media portrayal longitudinally when we pull both the pre and post election article data. 
+
+# Description of the Datasets
+
+Here is a breakdown of all the datasets we are using:
+
+##New York Times API 
+###Keyword: Trump, Dates: 1-1-2020 through 11-8-2020
+###Keyword: Trump, Dates: 1-1-2021 through 1-1-2022
+###Keyword: Biden, Dates: 1-1-2020 through 11-8-2020
+###Keyword: Biden, Dates: 1-1-2021 through 1-1-2022
+The Guardian API
+###Keyword: Trump, Dates: 1-1-2020 through 11-8-2020
+###Keyword: Trump, Dates: 1-1-2021 through 1-1-2022
+###Keyword: Biden, Dates: 1-1-2020 through 11-8-2020
+###Keyword: Biden, Dates: 1-1-2021 through 1-1-2022
+
+For both NYT and Guardian, we then pulled the text for all of the articles (though sometimes we could only pull a subset of the articles)
+
+
+Because we are analyzing news media and their opinion on the presidential candidates, it was important for us to get our hands on articles written about Trump and Biden 1 year leading up to election and 1 year after election day. The way we did it was we used the jsonlite package in R to pull essential information from each newspaper's APIs (NYT and the Guardian). The data we have include article title, url, word count and date of publication. However, APIs did not provide us with full text of each article. Afraid we might not have enough text to work with, we decided to webscrape the full text of the articles using a CSS selector unique to each newspaper.
+
+
+# New York Times: Biden
+## New York Times: Biden Before
+
+## New York Times: Biden After
+
+
+# New York Times: Trump
+## New York Times: Biden Before
+
+## New York Times: Biden After
+
+
+# The Guardian: Biden
+## The Guardian: Biden Before
+## The Guardian: Biden After
+
+# The Guardian: Trump
+## The Guardian: Trump Before
+## The Guardian: Trump After
+
+
+# Link to Plan for the Rest of the Semester
+
+[Link to our Semester Plan](https://docs.google.com/document/d/1p0PRy2ZPqzWCy_kjIglNMJh0EVDQ5Rl8Hih1olNOW64/edit?usp=sharing)
+
+
+# Each Group Member's Contribution to the Checkpoint
+
+We all worked on putting in the information for each of the different sources and candidates. For example, 
+Cecelia: New York Times, Trump and Biden, Before and After (we already had a lot of the data, so it was repulling and creating visualzations). In Presentation and RMD, the intro, research question, motivations, some of the info about the datasets, etc. 
+Yiyang: Guardian, Trump, Before and After
+Tam: Guardian, Biden, Before and After
+
+
+
+
+
+
+
+
+
 
