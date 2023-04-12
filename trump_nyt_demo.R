@@ -3,6 +3,7 @@ library(tidyverse)
 library(lubridate)
 library(rvest)
 library(readxl)
+library(urltools)
 
 key <- "&api-key=CunYbsfgJWDXmpfcvKnoW1G3TBAY6grG"
 url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump&begin_date=20200101&end_date=20200101&page=1"
@@ -19,30 +20,16 @@ keys <- c("&api-key=CunYbsfgJWDXmpfcvKnoW1G3TBAY6grG",
 
 dates <- ymd('20200101') + 0:5
 d <- format(dates,'%Y%m%d')
+
+
+
 totalarticles <- NULL
-
-# for (i in 1:length(keys)) {
-#   key = keys[i]
-#   for(i in d){
-#     p = 0
-#     while(p < 10){
-#       url = paste0(link, '&begin_date=',i ,'&end_date=',i ,'&page=',p)
-#       req <- fromJSON(paste0(url, key))
-#       articles <- req$response$docs
-#       totalarticles <- bind_rows(totalarticles,articles)
-#       if(isTRUE(nrow(articles)) && nrow(articles) != 10){ break }
-#       else{p = p+1}
-#       Sys.sleep(12)
-#     }
-#   }
-# }
-
 pr = 0
 for(i in d){
     p = 0
     while(p < 10){
-     key <- keys[pr %% length(keys)+1] #modular arithmetic
-      #key <- sample(keys, size = 1)
+      cat(i,p,'\n')
+      key <- keys[pr %% length(keys)+1] #modular arithmetic
       url = paste0(link, '&begin_date=',i ,'&end_date=',i ,'&page=',p)
       req <- fromJSON(paste0(url, key))
       pr = pr + 1
@@ -53,6 +40,7 @@ for(i in d){
       Sys.sleep(6)
     }
 }
+
 
 trumpnyttotal <-  totalarticles %>% 
   mutate(date = str_trunc(pub_date, width = 10, ellipsis = "")) %>% 
@@ -71,7 +59,9 @@ for (i in 1:length(totalarticles$web_url)) {
   body_text_tot <- bind_rows(body_text_tot, body_text_coll)
 }
 
-save(body_text_tot, file = "trump_nyt.RData")
+# save(body_text_tot, file = "trump_nyt.RData")
 
+
+totalarticles %>% count(web_url) %>% filter(n>1) %>% nrow()
 
 
