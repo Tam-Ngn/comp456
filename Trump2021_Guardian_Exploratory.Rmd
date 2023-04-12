@@ -25,14 +25,17 @@ library(ggraph)
 data("stop_words")
 mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s"))
 
-load("Articles Data/guardian2021.RData")
-load("Articles Data/guardian2021_text.RData")
+load("/Users/yiyangshi/Desktop/SPRING 2023/STAT 456/comp465/Articles Data/trump_guardian.RData")
+load("/Users/yiyangshi/Desktop/SPRING 2023/STAT 456/comp465/Articles Data/trump_guardian_text.RData")
 ```
 
 
 ```{r}
+#body_text_tot %>% filter(str_detect(text,'Trump'))
+
 tidy_body_text_tot <- body_text_tot %>%
   mutate(text = str_remove_all(text, "[:punct:]")) %>% 
+  filter(str_detect(text,'Trump')) %>% 
   filter(text != "")
 
 tidy_trump <- tidy_body_text_tot %>% 
@@ -88,6 +91,8 @@ section_tf_idf %>%
   labs(x = "tf-idf")
 
 ```
+
+
 ```{r}
 trump_bigrams <- totalarticles %>% 
   select(webUrl, sectionName) %>% 
@@ -203,11 +208,12 @@ tidy_body_text_tot %>%
   inner_join(get_sentiments("afinn")) %>% 
   group_by(date) %>% 
   summarize(tot_score = sum(value)) %>% 
+  filter(date <= "2020-07-01") %>% 
   ggplot(aes(x = date, y = tot_score, group = 1)) +
   geom_line() + 
   scale_colour_brewer(palette = "Set1") +
   scale_x_date(date_breaks="1 month", date_labels="%m-%Y") +
-  labs(title = "Guardian 2021",
+  labs(title = "Guardian 2020",
        subtitle = "Sentiment Score for Trump by Month") +
   xlab("") +
   ylab("Score") +

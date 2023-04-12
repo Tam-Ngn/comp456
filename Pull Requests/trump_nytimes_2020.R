@@ -3,7 +3,7 @@ library(tidyverse)
 library(lubridate)
 library(rvest)
 
-key <- "&api-key=Foeien0NfEGqCqAMv7ldo5VqbeeJuroW"
+key <- "&api-key=ps2dcEy37v0hvMltVu2CGWPqEIhdnbg4"
 url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump&begin_date=20200101&end_date=20200101&page=1"
 req <- fromJSON(paste0(url, key))
 articles <- req$response$docs
