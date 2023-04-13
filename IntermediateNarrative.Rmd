@@ -390,10 +390,106 @@ g_t_section_words %>%
 top 2 are "war" and "fight", which carry heavily negative connatations.
 
 
-Again, we acknowledge the limtations in our method that without specific context, words can have various meanings, depending on our own interpretation. For example, war here can either mean "trade war" or "nuclear war", we however are unable to determine which of these variations is being refered to here.
+Again, we acknowledge the limitations in our method that without specific context, words can have various meanings, depending on our own interpretation. For example, war here can either mean "trade war" or "nuclear war", we however are unable to determine which of these variations is being refered to here.
 
 
 ## The Guardian: Trump After
+
+```{r}
+# prepare the data for the following visualiztions. 
+
+load("trump_guardian.RData")
+load("trump_guardian_text.RData")
+
+tidy_body_text_tot <- body_text_tot %>%
+  mutate(text = str_remove_all(text, "[:punct:]")) %>% 
+  filter(str_detect(text,'Trump')) %>% 
+  filter(text != "")
+
+section_words <- totalarticles %>% 
+  select(webUrl, sectionName) %>% 
+  rename(url = webUrl) %>% 
+  left_join(tidy_body_text_tot, by = "url") %>% 
+  unnest_tokens(word, text) %>% 
+  count(sectionName, word, sort = TRUE)
+```
+
+
+```{r}
+section_words %>% 
+  anti_join(stop_words, by = "word") %>% 
+  anti_join(mystopwords, by = "word") %>% 
+  inner_join(get_sentiments("bing"), by = "word") %>% # I'm using "bing" package here to count the quant of positive and negative words
+  group_by(sectionName, sentiment) %>% 
+  summarize(quant = sum(n)) %>% 
+  group_by(sectionName) %>% 
+  mutate(ratio = quant/sum(quant)) %>% 
+  ggplot(aes(x = sectionName, y = ratio, fill = sentiment)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        legend.title = element_blank()) +
+  labs(title = "The Guardian View on Trump in 2021",
+       subtitle = "The Ratio of Positive & Negative Words by Section ('bing')") +
+  xlab("") +
+  ylab("Ratio")
+```
+
+
+
+```{r}
+section_words %>% 
+  anti_join(stop_words, by = "word") %>% 
+  anti_join(mystopwords, by = "word") %>% 
+  inner_join(get_sentiments("afinn"), by = "word") %>%  # I used "afinn" package here to get the score of each word
+  group_by(sectionName, word) %>% 
+  summarize(score = n*value) %>% 
+  ungroup() %>% 
+  mutate(sentiment = ifelse(score > 0, "positive", "negative")) %>% 
+  group_by(sectionName, sentiment) %>% 
+  summarize(cum_score = sum(abs(score))) %>% 
+  mutate(ratio = cum_score/sum(cum_score)) %>% 
+  ggplot(aes(x = sectionName, y = ratio, fill = sentiment)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        legend.title = element_blank()) +
+  labs(title = "The Guardian View on Trump in 2021",
+       subtitle = "The Ratio of Positive & Negative Score by Section ('afinn')") +
+  xlab("") +
+  ylab("Ratio")
+```
+
+
+Both of these graphs above are negative leaning across most of the sections, but I also notice some differences between these two graphs. Section "GNM press office", "Guardian Masterclasses", "Inequality" are positive leaning in both graphs, but the within section differences are greater in "afinn" graph compared with those of "bing" graph. This may because of the weights are assigned by the "afinn" package to each word. In this case, even if the positive and negative word counts may be similar in these sections, some words are extremely positive which caused outstandingly high ratio of positive in "afinn" graph. 
+
+```{r}
+tidy_body_text_tot %>% 
+  rename(webUrl = url) %>% 
+  left_join(totalarticles, by = "webUrl") %>% 
+  select(webPublicationDate, text) %>% 
+  mutate(date = str_trunc(webPublicationDate, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date) %>% 
+  summarize(tot_score = sum(value)) %>% 
+  filter(date <= "2021-07-01" & date >= "2021-01-01") %>% 
+  ggplot(aes(x = date, y = tot_score, group = 1)) +
+  geom_line() + 
+  scale_colour_brewer(palette = "Set1") +
+  scale_x_date(date_breaks="1 month", date_labels="%m-%Y") +
+  labs(title = "Guardian 2021",
+       subtitle = "Sentiment Score for Trump by Month") +
+  xlab("") +
+  ylab("Score") +
+  theme_classic()
+```
+
+
+The graph above is wiggly since the sentiment scores are aggregated on daily scale, but it tells more stories on the event that happened around each down point. For example, the first down point may resulted from the capitol attack on Jan 6 2021 following President Trump's defeat on the 2020 presidential election.  
 
 
 # Link to Plan for the Rest of the Semester
