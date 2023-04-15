@@ -6,6 +6,11 @@ library(httr)
 library(dplyr)
 library(purrr)
 
+# key <- "&api-key=9ta4cAbFQANV7eEtSnxC66sXFtDNHF3W"
+# url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump&being_date=20210101&end_date=20220101&page=1"
+# # req <- fromJSON(paste0(url, key))
+# # articles <- req$response$docs
+# link = "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump"
 keys <- c("&api-key=cumvHk001k7fzLrYUzzhedOnpBmE10KA",
           "&api-key=xvqH3HO2xD6NByq370dklgCcIk0r030H",
           "&api-key=31DbappgFA6WvFzDP6PpWM1d45v3iaR0",
@@ -18,11 +23,27 @@ keys <- c("&api-key=cumvHk001k7fzLrYUzzhedOnpBmE10KA",
           "&api-key=YKKB0ErfCnSsV0E0I1McWfgf5XnrLM0p",
           "&api-key=1YEgc4e5GGcw6WfkXfOd0U7HcaE0BjcT",
           "&api-key=ps2dcEy37v0hvMltVu2CGWPqEIhdnbg4")
-
+# 
+# dates <- ymd('20210101') + 0:365
+# d <- format(dates,'%Y%m%d')
+# 
+# totalarticles <- data.frame()
+# for(i in d){
+#   p = 0
+#   while(p < 10){
+#     url = paste0(link, '&begin_date=',i ,'&end_date=',i ,'&page=',p)
+#     req <- fromJSON(paste0(url, key))
+#     articles <- req$response$docs
+#     totalarticles <- bind_rows(totalarticles ,articles)
+#     if(isTRUE(nrow(articles)) && nrow(articles) != 10){ break }
+#     else{p = p+1}
+#     Sys.sleep(12)
+#   }
+# }
 
 key <- keys[1]
-link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump"
-dates <- ymd('20210101') + 1:365
+link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=biden"
+dates <- ymd('20210111') + 1:365
 d <- format(dates,'%Y%m%d')
 
 totalarticles <- NULL
