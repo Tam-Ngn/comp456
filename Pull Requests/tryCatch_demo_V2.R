@@ -6,26 +6,16 @@ library(httr)
 library(dplyr)
 library(purrr)
 
-keys <- c("&api-key=FQ01iI5Z3TQoYDnshTl4GMz0IfTDrE1F",
-          "&api-key=jYBG2nOiHHNlHXM8RGVHhlyUDIVUu1fB",
-          "&api-key=01i9pT9nnesj00P9veawIMWcJsnO0vei",
-          "&api-key=TceNuU0SFP5e0F4CoTr7Ne0zTM4Q0Kj5",
-          "&api-key=VA72pccFcItnIkPc4XNesMNgkrcB64M6",
-          "&api-key=QWMbRyyDxb9ru69schGNgONWzaFqqrfM",
-          "&api-key=Qve0t2oBk0s0U6TRSTtQN8X0wC5GjLkU",
-          "&api-key=0ERIip6y8vYL3guVLHPhloYnUDB1Mo4l",
-          "&api-key=x64Y06oMVu7ci9tMwHKjuKz62S0BOFN6",
-          "&api-key=dKzZ2TlID6zKLV10SyIkuT6k02eHqbxo",
-          "&api-key=0G3VMynvlXxM7i0uesIBXbh37E9bXRv1",
-          "&api-key=fMCM4RSTyPspzNHrTvIWZDP5rg50G03B",
-          "&api-key=L00xTVjUxDZ9dvMwb5DjCLHiCsvQJsit",
-          "&api-key=ZDi7nhNDovFVVsztmJrRa1kjkMqoS49R",
-          "&api-key=jQPTweHVMOFUGBbc9BSadRM8O7Af6lxV")
+keys <- c("&api-key=m3IKHavEa8WMAAlDxRTi5dlQG6GPBQAN",
+          "&api-key=gDxQ32ZZfP8KarCN5MrGdmrkeKfkko7u",
+          "&api-key=HG44jd3IZorXQ4m6DDf0Nh26ba1Mlaoa",
+          "&api-key=Cg6eP60vTxQAEtZoez9YccqiF9CHCyCA",
+          "&api-key=CunYbsfgJWDXmpfcvKnoW1G3TBAY6grG")
 
 
 key <- keys[1]
 link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=biden"
-dates <- ymd('20210127') + 0:365
+dates <- ymd('20210605') + 0:210
 d <- format(dates,'%Y%m%d')
 
 totalarticles <- NULL
