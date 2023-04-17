@@ -6,23 +6,26 @@ library(httr)
 library(dplyr)
 library(purrr)
 
-keys <- c("&api-key=cumvHk001k7fzLrYUzzhedOnpBmE10KA",
-          "&api-key=xvqH3HO2xD6NByq370dklgCcIk0r030H",
-          "&api-key=31DbappgFA6WvFzDP6PpWM1d45v3iaR0",
-          "&api-key=mV3GN0SnT9XeXptHUU4hPNTPd6008KBF",
-          "&api-key=4ixxp0B1hVYQaWd08g30PUEsJfccHoeA",
-          "&api-key=OARgAi9nJdFMQDVKX0ZUWGTkTiAi9Fou",
-          "&api-key=UirO2ojFEs7VnfzfThRa3m3HFbzigCPe",
-          "&api-key=uXl8y0xVM7DB1yyGGkegdWCTcSi0L0gk",
-          "&api-key=tKb8xVsOG5P4FSUqGizUs7yXXtTC06X8",
-          "&api-key=YKKB0ErfCnSsV0E0I1McWfgf5XnrLM0p",
-          "&api-key=1YEgc4e5GGcw6WfkXfOd0U7HcaE0BjcT",
-          "&api-key=ps2dcEy37v0hvMltVu2CGWPqEIhdnbg4")
+keys <- c("&api-key=FQ01iI5Z3TQoYDnshTl4GMz0IfTDrE1F",
+          "&api-key=jYBG2nOiHHNlHXM8RGVHhlyUDIVUu1fB",
+          "&api-key=01i9pT9nnesj00P9veawIMWcJsnO0vei",
+          "&api-key=TceNuU0SFP5e0F4CoTr7Ne0zTM4Q0Kj5",
+          "&api-key=VA72pccFcItnIkPc4XNesMNgkrcB64M6",
+          "&api-key=QWMbRyyDxb9ru69schGNgONWzaFqqrfM",
+          "&api-key=Qve0t2oBk0s0U6TRSTtQN8X0wC5GjLkU",
+          "&api-key=0ERIip6y8vYL3guVLHPhloYnUDB1Mo4l",
+          "&api-key=x64Y06oMVu7ci9tMwHKjuKz62S0BOFN6",
+          "&api-key=dKzZ2TlID6zKLV10SyIkuT6k02eHqbxo",
+          "&api-key=0G3VMynvlXxM7i0uesIBXbh37E9bXRv1",
+          "&api-key=fMCM4RSTyPspzNHrTvIWZDP5rg50G03B",
+          "&api-key=L00xTVjUxDZ9dvMwb5DjCLHiCsvQJsit",
+          "&api-key=ZDi7nhNDovFVVsztmJrRa1kjkMqoS49R",
+          "&api-key=jQPTweHVMOFUGBbc9BSadRM8O7Af6lxV")
 
 
 key <- keys[1]
-link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump"
-dates <- ymd('20210101') + 1:3
+link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=biden"
+dates <- ymd('20210127') + 0:365
 d <- format(dates,'%Y%m%d')
 
 totalarticles <- NULL
