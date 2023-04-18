@@ -36,7 +36,7 @@ for(i in d){
         totalarticles <- dplyr::bind_rows(totalarticles, articles)
         cat("Date:", i, "Page:", p, "# of articles:", nrow(articles), "\n")
         if(nrow(articles) != 10) {
-          p <- 11 # Cannot use break here, since it will break the while loop without executing Sys.sleep(12)
+          p <- 11 # Don't use "break" here, since it will break the while loop without executing Sys.sleep(12)
         } else {
           p <- p + 1
         }
@@ -64,20 +64,62 @@ for(i in d){
 }
 
 
-
-
 # save(totalarticles, file = "trumparticlesafter.RData")
 
+
+
+# Run these every time before you first start pulling article text
 article <- NULL
 body_text_tot <- NULL
+failures <- 0
+
+# updated version of text pulling code
 for (i in 1:length(totalarticles$web_url)) {
-  article <- read_html(totalarticles$web_url[i])
-  body_text <- 
-    article %>% 
-    html_elements(".css-at9mc1.evys1bk0") %>% 
-    html_text()
-  body_text_coll<- tibble(url = totalarticles$web_url[i], text = paste(body_text, collapse = " "))
-  body_text_tot <- bind_rows(body_text_tot, body_text_coll)
+  tryCatch({
+    response <- GET(totalarticles$web_url[i])
+    if (response$status_code == 500) {
+      failures <- failures + 1
+      if (failures < 3) {
+        cat("# of failures :", failures, "\n", "API request failed with 500 status code. Pause 60s and retrying \n")
+        Sys.sleep(60)
+      }
+      else {
+        cat("# of failures :", failures, "\n", "API request failed with 500 status code. Pause 180s and retrying \n")
+        Sys.sleep(180)
+        failures <- 0
+      }
+    }
+    else if (response$status_code == 200) {
+      article <- read_html(totalarticles$web_url[i])
+      body_text <- 
+        article %>% 
+        html_elements(".css-at9mc1.evys1bk0") %>% 
+        html_text()
+      body_text_coll<- tibble(url = totalarticles$web_url[i], text = paste(body_text, collapse = " "))
+      body_text_tot <- bind_rows(body_text_tot, body_text_coll)
+      cat("# of article text pulled: ", nrow(body_text_tot), "\n")
+    }
+    else if (response$status_code == 404) {
+      cat("The url:", web_url[i], "returned a 404 status code. Skipping to the next url. \n")
+      next
+    }
+    else {
+      cat("API request failed with status code", response$status_code, "\n")
+      break
+      }
+    }, error = function(e) {
+      cat("Error in API request:", conditionMessage(e), "\n")
+      break
+  })
 }
 
-# need a save function here
+
+# for (i in 819:length(totalarticles$web_url)) {
+#   article <- read_html(totalarticles$web_url[i])
+#   body_text <- 
+#     article %>% 
+#     html_elements(".css-at9mc1.evys1bk0") %>% 
+#     html_text()
+#   body_text_coll<- tibble(url = totalarticles$web_url[i], text = paste(body_text, collapse = " "))
+#   body_text_tot <- bind_rows(body_text_tot, body_text_coll)
+# }
