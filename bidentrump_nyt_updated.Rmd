@@ -219,6 +219,32 @@ section_words %>%
   ylab("Ratio")
 ```
 
+```{r}
+body_text_bidenbefore %>% 
+  rename(web_url = url) %>% 
+  left_join(bidenarticles, by = "web_url") %>% 
+  select(pub_date, text) %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date) %>% 
+  summarize(tot_score = sum(value)) %>% 
+  filter(date <= "2020-07-01") %>% 
+  ggplot(aes(x = date, y = tot_score, group = 1)) +
+  geom_line() + 
+  scale_colour_brewer(palette = "Set1") +
+  scale_x_date(date_breaks="1 month", date_labels="%m-%Y") +
+  labs(title = "New York Times 2020",
+       subtitle = "Sentiment Score for Biden by Month") +
+  xlab("") +
+  ylab("Score") +
+  theme_classic()
+```
+
+
 # Biden Articles After
 
 ## Load the Data 
