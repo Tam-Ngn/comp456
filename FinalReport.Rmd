@@ -1,0 +1,83 @@
+---
+title: "FinalReport"
+author: '"Cecelia Kaufmann, Yiyang Shi, and Tam Nguyen"'
+date: '2023-04-18'
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE, tidy = FALSE, message = FALSE, cache.extra = packageVersion("tufte"))
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(urltools)
+library(scales)
+library(textdata)
+library(wordcloud)
+library(igraph) 
+library(ggplot2)
+library(tidytext)
+library(broom)
+library(reshape2)
+library(rvest)
+library(igraph)
+library(tm)
+library(ggraph)
+library(SnowballC)
+data("stop_words")
+mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
+```
+
+# Inttroduction
+## About our project:
+
+## Research Question(s):
+
+How Differently Did Domestic Newspapers and International Newspapers Portray Donald Trump and Joe Biden before and after The 2020 U.S. Presidential Election?
+
+Are certain events indicators of how the newspaper will portray a specific candidate?
+
+
+## About our datasets
+Here is a breakdown of all the datasets we are using:
+  New York Times API 
+    Keyword: Trump, Dates: 1-1-2020 through 11-8-2020
+    Keyword: Trump, Dates: 1-1-2021 through 1-1-2022
+    Keyword: Biden, Dates: 1-1-2020 through 11-8-2020
+    Keyword: Biden, Dates: 1-1-2021 through 1-1-2022
+  The Guardian API
+    Keyword: Trump, Dates: 1-1-2020 through 11-8-2020
+    Keyword: Trump, Dates: 1-1-2021 through 1-1-2022
+    Keyword: Biden, Dates: 1-1-2020 through 11-8-2020
+    Keyword: Biden, Dates: 1-1-2021 through 1-1-2022
+
+For both NYT and Guardian, we then pulled the text for all of the articles (though sometimes we could only pull a subset of the articles)
+
+
+Because we are analyzing news media and their opinion on the presidential candidates, it was important for us to get our hands on articles written about Trump and Biden 1 year leading up to election and 1 year after election day. The way we did it was we used the jsonlite package in R to pull essential information from each newspaper's APIs (NYT and the Guardian). The data we have include article title, url, word count and date of publication. However, APIs did not provide us with full text of each article. Afraid we might not have enough text to work with, we decided to webscrape the full text of the articles using a CSS selector unique to each newspaper.
+
+One key factor to identity is the type of new sources we were able to pull articles and information from. Initially, we wanted to identify four news sources that spanned across the political spectrum (in U.S. politic terms, from left to right). Unfortunately, in our initial research and given the scope of the project, we were only able to get access to free and "easily" available. On the domestic level, that ended up being the New York Times which is a left leaning newspaper. On the international level, it ended up being the Guardian, which is also a left leaning paper out of the U.K. Therefore, we can assume there may be some bias in our data because of the news sources' political alignments-- Trump would be portrayed in a more negative light compared to Biden. 
+
+## About Sentiment Analysis and Why We Are Using it for Our Research
+  Sentiment analysis, which is also sometimes referred to as opinion mining is a way to use natural language processing (NLP) to identify the emotional tone behind a body of text. Through different types of lexicons, a word or string of words can be identified as positive, negative, or neutral. In performing sentiment analysis, we are hoping to gain a deeper understanding on how the newspapers portray the two leading candidates for the U.S. Presidental Election in 2020, and how that changed over the span on two years.  
+### Lexicons and the "AFINN"
+lexicon
+For lexicon-based sentiment analysis, which we used for this research, words in the text are labeled as positive or negative with the help of a valence dictionary. For this research, we used the AFINN lexicon, which assigns words with a score between -5 and 5, with a more negative score indicating a more negative word and vice versa. We felt for this research that a weighted lexicon dictionary would make the most sense, especially since we are comparing over time and a lot of words. 
+
+### Stop Words
+We also used a stop_words library in our data analysis. The stop_words library removed common words like "if", "but", "we", "of", and "they". Firstly, removing these words do not change the over all semantics of the text one is analyzing and secondly, doing this can sometimes improve the performance of the model. We also created our own list of stop words, which we included names of candidates and other common words not removed from the stop_words library (like "here's", "it's", and "jr") because they are common words that would affect our sentiment analysis but removed would not affect the overall meaning. 
+
+### Stemming and the SnowballC package (Porter Algorithm)
+
+We also utilized a stemming algorithm (Porter's Algorithm) to reduce the number of words we are analyzing without minimizing the analysis. With the SnowballC package, we can reduce the words to their base or root form. For example, "ran" and "running" would just be reduced to the stem "run". This streamlines the process of sentiment analysis. 
+
+
+# Ethical issues (who may be harmed and who may benefit)
+
+To our understanding, we feel that very feel people could be harmed by the outcome of our work. Just given that we are using information that is already out in the world, we don't have to be particularly concerned about how the information may harm someone. Our only concern/something we need to pay specfic attention to is how we analyze the data. If we analyze something out of context and don't give our audience the correct information, that could be concerning and misleading but not particularly harmful.
+
+As for those who may benefit, we think that our work could give new insight to members of the political science community or people that are interested in the intersection of election work, journalism, and data. Sentiment analysis is critical to understanding how tone and words can affect outcomes, and it is interesting to see the difference between domestic and international word choice, frequencies, and tonality on different stages. This could be insightful for political scientists in considering election data. 
+
+# Exploratory Analysis 
+##Time Series Graphs
+To begin our exploration, we are going to look at the sentiment of articles for both candidates across time, from both different newspapers. Our hope to to be able to isolate a pattern or specific dips and rises in the graph and look into the reasons for that. 
+
