@@ -6,44 +6,16 @@ library(httr)
 library(dplyr)
 library(purrr)
 
-# key <- "&api-key=9ta4cAbFQANV7eEtSnxC66sXFtDNHF3W"
-# url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump&being_date=20210101&end_date=20220101&page=1"
-# # req <- fromJSON(paste0(url, key))
-# # articles <- req$response$docs
-# link = "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=trump"
-keys <- c("&api-key=cumvHk001k7fzLrYUzzhedOnpBmE10KA",
-          "&api-key=xvqH3HO2xD6NByq370dklgCcIk0r030H",
-          "&api-key=31DbappgFA6WvFzDP6PpWM1d45v3iaR0",
-          "&api-key=mV3GN0SnT9XeXptHUU4hPNTPd6008KBF",
-          "&api-key=4ixxp0B1hVYQaWd08g30PUEsJfccHoeA",
-          "&api-key=OARgAi9nJdFMQDVKX0ZUWGTkTiAi9Fou",
-          "&api-key=UirO2ojFEs7VnfzfThRa3m3HFbzigCPe",
-          "&api-key=uXl8y0xVM7DB1yyGGkegdWCTcSi0L0gk",
-          "&api-key=tKb8xVsOG5P4FSUqGizUs7yXXtTC06X8",
-          "&api-key=YKKB0ErfCnSsV0E0I1McWfgf5XnrLM0p",
-          "&api-key=1YEgc4e5GGcw6WfkXfOd0U7HcaE0BjcT",
-          "&api-key=ps2dcEy37v0hvMltVu2CGWPqEIhdnbg4")
-# 
-# dates <- ymd('20210101') + 0:365
-# d <- format(dates,'%Y%m%d')
-# 
-# totalarticles <- data.frame()
-# for(i in d){
-#   p = 0
-#   while(p < 10){
-#     url = paste0(link, '&begin_date=',i ,'&end_date=',i ,'&page=',p)
-#     req <- fromJSON(paste0(url, key))
-#     articles <- req$response$docs
-#     totalarticles <- bind_rows(totalarticles ,articles)
-#     if(isTRUE(nrow(articles)) && nrow(articles) != 10){ break }
-#     else{p = p+1}
-#     Sys.sleep(12)
-#   }
-# }
+keys <- c("&api-key=m3IKHavEa8WMAAlDxRTi5dlQG6GPBQAN",
+          "&api-key=gDxQ32ZZfP8KarCN5MrGdmrkeKfkko7u",
+          "&api-key=HG44jd3IZorXQ4m6DDf0Nh26ba1Mlaoa",
+          "&api-key=Cg6eP60vTxQAEtZoez9YccqiF9CHCyCA",
+          "&api-key=CunYbsfgJWDXmpfcvKnoW1G3TBAY6grG")
+
 
 key <- keys[1]
 link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=biden"
-dates <- ymd('20210111') + 1:365
+dates <- ymd('20210605') + 0:210
 d <- format(dates,'%Y%m%d')
 
 totalarticles <- NULL
@@ -62,9 +34,9 @@ for(i in d){
                               news_desk = .x$news_desk,
                               section_name = .x$section_name))
         totalarticles <- dplyr::bind_rows(totalarticles, articles)
-        cat("totalarticles length", nrow(totalarticles), "Pull request status okay.\n")
-        if(isTRUE(nrow(articles)) && nrow(articles) != 10) {
-          break
+        cat("Date:", i, "Page:", p, "# of articles:", nrow(articles), "\n")
+        if(nrow(articles) != 10) {
+          p <- 11 # Don't use "break" here, since it will break the while loop without executing Sys.sleep(12)
         } else {
           p <- p + 1
         }
@@ -92,20 +64,62 @@ for(i in d){
 }
 
 
-
-
 # save(totalarticles, file = "trumparticlesafter.RData")
 
+
+
+# Run these every time before you first start pulling article text
 article <- NULL
 body_text_tot <- NULL
-for (i in 1:length(totalarticles$web_url)) {
-  article <- read_html(totalarticles$web_url[i])
-  body_text <- 
-    article %>% 
-    html_elements(".css-at9mc1.evys1bk0") %>% 
-    html_text()
-  body_text_coll<- tibble(url = totalarticles$web_url[i], text = paste(body_text, collapse = " "))
-  body_text_tot <- bind_rows(body_text_tot, body_text_coll)
+failures <- 0
+
+# updated version of text pulling code
+for (i in 1347:length(totalarticles$web_url)) {
+  tryCatch({
+    response <- GET(totalarticles$web_url[i])
+    if (response$status_code == 500) {
+      failures <- failures + 1
+      if (failures < 3) {
+        cat("# of failures :", failures, "\n", "API request failed with 500 status code. Pause 60s and retrying \n")
+        Sys.sleep(60)
+      }
+      else {
+        cat("# of failures :", failures, "\n", "API request failed with 500 status code. Pause 180s and retrying \n")
+        Sys.sleep(180)
+        failures <- 0
+      }
+    }
+    else if (response$status_code == 200) {
+      article <- read_html(totalarticles$web_url[i])
+      body_text <- 
+        article %>% 
+        html_elements(".css-at9mc1.evys1bk0") %>% 
+        html_text()
+      body_text_coll<- tibble(url = totalarticles$web_url[i], text = paste(body_text, collapse = " "))
+      body_text_tot <- bind_rows(body_text_tot, body_text_coll)
+      cat("# of article text pulled: ", nrow(body_text_tot), "\n")
+    }
+    else if (response$status_code == 404) {
+      cat("The url:", web_url[i], "returned a 404 status code. Skipping to the next url. \n")
+      next
+    }
+    else {
+      cat("API request failed with status code", response$status_code, "\n")
+      break
+    }
+  }, error = function(e) {
+    cat("Error in API request:", conditionMessage(e), "\n")
+    break
+  })
 }
 
-# need a save function here
+
+# for (i in 819:length(totalarticles$web_url)) {
+#   article <- read_html(totalarticles$web_url[i])
+#   body_text <- 
+#     article %>% 
+#     html_elements(".css-at9mc1.evys1bk0") %>% 
+#     html_text()
+#   body_text_coll<- tibble(url = totalarticles$web_url[i], text = paste(body_text, collapse = " "))
+#   body_text_tot <- bind_rows(body_text_tot, body_text_coll)
+# }
