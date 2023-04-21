@@ -33,25 +33,6 @@ for(i in d){
 }
 
 
-# save(totalarticles, file = "trump_guardian_2020.RData")
-
-
-# article <- read_html("https://www.theguardian.com/media/2023/mar/08/fox-news-dominion-lawsuit-what-we-know")
-# 
-# 
-# body_text <- 
-#   article %>% 
-#   html_elements(".dcr-n6w1lc") %>% 
-#   html_text()
-# 
-# paste(body_text, collapse = " ")
-
-# truncate the publication date variable in totalarticles, and filter the articles in 2020, 2021
-
-totalarticles <-  totalarticles %>% 
-  mutate(date = str_trunc(webPublicationDate, width = 10, ellipsis = "")) %>% 
-  filter(date >= "2020-01-01")
-
 # save(totalarticles, file = "trump_guardian.RData")
 
 article <- NULL
@@ -67,3 +48,18 @@ for (i in 1:length(totalarticles$webUrl)) {
 }
 
 # save(body_text_tot, file = "trump_guardian_text.RData")
+
+article <- NULL
+body_text_tot_6 <- NULL
+for (i in 1:length(totalarticles$webUrl)) {
+  article <- read_html(totalarticles$webUrl[i])
+  body_text <- 
+    article %>% 
+    html_elements(c(".dcr-1gesh1i")) %>% 
+    html_text()
+  body_text_coll<- tibble(url = totalarticles$webUrl[i], text = paste(body_text, collapse = " "))
+  body_text_tot_6 <- bind_rows(body_text_tot_6, body_text_coll)
+}
+
+html_element(".dcr-az7egx", ".dcr-1up63on", ".dcr-8zipgp", ".dcr-94xsh", "dcr-1gesh1i")
+
