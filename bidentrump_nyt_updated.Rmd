@@ -19,7 +19,7 @@ library(tm)
 library(ggraph)
 library(SnowballC)
 data("stop_words")
-mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
+mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg","don/'t"))
 ```
 
 
@@ -795,26 +795,7 @@ trump_trigram_sep %>%
 
 ```
 
-```{r}
-# Making a graph of positive v.s. negative by section on ratio aspect
-section_words %>% 
-  anti_join(stop_words, by = "word") %>% 
-  anti_join(mystopwords, by = "word") %>% 
-  inner_join(get_sentiments("bing"), by = "word") %>% # I'm using "bing" package here to count the quant of positive and negative words
-  group_by(section_name, sentiment) %>% 
-  summarize(quant = sum(n)) %>% 
-  group_by(section_name) %>% 
-  mutate(ratio = quant/sum(quant)) %>% 
-  ggplot(aes(x = section_name, y = ratio, fill = sentiment)) +
-  geom_bar(stat = "identity", position = "dodge") + 
-  scale_fill_brewer(palette = "Set1") + 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
-        legend.title = element_blank()) +
-  labs(title = "The New York Times View on Trump in 2021",
-       subtitle = "The Ratio of Positive & Negative Words by Section ('bing')") +
-  xlab("") +
-  ylab("Ratio")
-```
+
 ```{r}
 section_words %>% 
   anti_join(stop_words, by = "word") %>% 
@@ -851,8 +832,9 @@ full_trump_nyt <-
 ```
 
 ```{r}
-png("trumpnytimesfull.png")
-trump_graph <- full_trump_nyt %>% 
+#png("trumpnytimesfull.png")
+#trump_graph <- 
+  full_trump_nyt %>% 
   select(pub_date, word) %>% 
   mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
   mutate(date = ymd(date)) %>% 
@@ -870,18 +852,14 @@ trump_graph <- full_trump_nyt %>%
   labs(title = "New York Times 2020 through 2022",
        subtitle = "Sentiment Score for Trump by Month") +
   xlab("") +
-  ylab("Score") +
-  theme_classic()
-dev.off()
+  ylab("Score") 
+#dev.off()
 ```
 
 ### Time Series: Trump and Biden Combined
 
 
-
-
 ```{r}
-png("bidenandtrumpnytsmooth.png")
 ggplot(biden_graph,(aes(x = date, y = tot_score, group = 1))) +
   geom_smooth(color = "blue") + 
   geom_smooth(data = trump_graph, color = "red") +
@@ -891,10 +869,95 @@ ggplot(biden_graph,(aes(x = date, y = tot_score, group = 1))) +
        subtitle = "Sentiment Score for 2020 U.S. Presidental Candidates Donald Trump
 (Red) and Joe Biden (Blue) Quarterly") +
   xlab("") +
+  ylab("Score") 
+```
+
+```{r}
+jan_nyt_trump <- full_trump_nyt %>%
+mutate(Date = as_date(pub_date)) %>%
+  filter(between(Date, as.Date('2021-01-01'), as.Date('2021-01-31'))) 
+
+jan_nyt_trump %>%
+  select(Date, word) %>% 
+  mutate(date = str_trunc(Date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>% 
+  unnest_tokens(word, word) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date) %>% 
+  summarize(tot_score = sum(value))  %>%
+  #filter(date <= "2020-07-01") %>% 
+  ggplot(aes(x = date, y = tot_score, group = 1)) +
+  geom_line() + 
+  scale_colour_brewer(palette = "Set1") +
+  scale_x_date(date_breaks="3 day", date_labels="%m-%d") +
+  labs(title = "New York Times January 2021",
+       subtitle = "Sentiment Score for Trump by Day") +
+  xlab("") +
   ylab("Score") +
   theme_classic()
-dev.off()
+
+
+```
+
+If we Zoom in more on Trump 2021 from the NYT, first we can notice that his score is never really positive. Overall, he has a remarkably negative sentiment score overall. Secondly, we see that his score hits an all time low right around the 9th of the month, which makes sense considering that on January 6th, 2021, the insurection happened. 
+
+```{r}
+jan_nyt_trump %>%
+inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>%
+  filter(sentiment == "negative")
+```
+During the month of January, the negative words most frequently associated with Donald Trump were "attack", "fraud", "conservative", and "lost". 
+
+```{r}
+jan_nyt_trump %>%
+inner_join(get_sentiments("bing"))
 ```
 
 
+```{r}
+full_trump_nyt %>%
+  inner_join(get_sentiments("afinn")) %>% ggplot(aes(value)) + geom_histogram(color = "black", fill = "white", 
+    bins = 30)
+```
+
+```{r}
+full_biden_nyt %>%
+  inner_join(get_sentiments("afinn")) %>% ggplot(aes(value)) + geom_histogram(color = "black", fill = "white", 
+    bins = 30) 
+```
+Considering scale, the count of words is much higher for Biden. Secondly, there is much more of a spread in terms of negative versus positive for Biden. There seems to be more negative words associated with Trump versus Biden over the span of two years. 
+
+```{r}
+full_biden_nyt %>%
+inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>%
+  filter(sentiment == "negative")
+```
+
+```{r}
+full_trump_nyt %>%
+inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>%
+  filter(sentiment == "negative")
+```
+```{r}
+full_biden_nyt %>%
+inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>%
+  filter(sentiment == "positive")
+```
+```{r}
+full_trump_nyt %>%
+inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>%
+  filter(sentiment == "positive")
+```
 
