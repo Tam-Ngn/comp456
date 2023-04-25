@@ -193,31 +193,31 @@ section_words %>%
 ```
 
 ```{r}
-# Graph of sentiment score by month with package "afinn".
-# might wanna combine guardian score with nytimes score and see the comparison in a single graph
-# TO DO: pull all the 2021 articles from nytimes and guardian.
 tidy_body_text_tot %>% 
   rename(webUrl = url) %>% 
   left_join(totalarticles, by = "webUrl") %>% 
-  select(webPublicationDate, text) %>% 
+  select(webPublicationDate, text, webUrl) %>% 
   mutate(date = str_trunc(webPublicationDate, 10, ellipsis = "")) %>% 
   mutate(date = ymd(date)) %>% 
   unnest_tokens(word, text) %>% 
   anti_join(stop_words) %>% 
   anti_join(mystopwords) %>% 
   inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, webUrl) %>% 
+  summarize(art_score = mean(value)) %>% 
   group_by(date) %>% 
-  summarize(tot_score = sum(value)) %>% 
-  filter(date <= "2020-07-01") %>% 
-  ggplot(aes(x = date, y = tot_score, group = 1)) +
+  summarize(day_score = mean(art_score)) %>% 
+  ggplot(aes(x = date, y = day_score, group = 1)) +
   geom_line() + 
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = mdy('11-08-2020'),color='red') +
+  geom_smooth(se=FALSE)+
   scale_colour_brewer(palette = "Set1") +
-  scale_x_date(date_breaks="1 month", date_labels="%m-%Y") +
-  labs(title = "Guardian 2020",
+  scale_x_date(date_breaks="2 month", date_labels="%m-%Y") +
+  labs(title = "Guardian 2020 through 2022",
        subtitle = "Sentiment Score for Trump by Month") +
   xlab("") +
-  ylab("Score") +
-  theme_classic()
+  ylab("Score") + theme_classic()
 ```
 
 

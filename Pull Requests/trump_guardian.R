@@ -1,7 +1,4 @@
-library(jsonlite)
-library(tidyverse)
-library(lubridate)
-library(rvest)
+
 
 key <- "&api-key=395b850e-d5c2-4414-aed5-02beddcbbd23"
 url <- "https://content.guardianapis.com/search?q=trump&from-date=2020-01-01&to-date=2020-01-01&page=1"
@@ -37,12 +34,17 @@ for(i in d){
 
 article <- NULL
 body_text_tot <- NULL
-for (i in 1:length(totalarticles$webUrl)) {
+for (i in 1:10) {
   article <- read_html(totalarticles$webUrl[i])
-  body_text <- 
+ cssSelector <- 
     article %>% 
-    html_elements(".dcr-n6w1lc") %>% 
-    html_text()
+    html_elements(".article-body-viewer-selector") %>% #.dcr-n6w1lc, .dcr-az7egx, .dcr-1up63on, .dcr-8zipgp, .dcr-94xsh, .dcr-1gesh1i") %>% 
+    html_attr('class') %>% str_split(' ') %>% sapply(tail, n=1) %>% paste0('.',.)
+    if(cssSelector =='.'){body_text  = NULL}
+    else{
+      body_text <- article %>% 
+      html_elements(cssSelector) %>%   html_text()
+      }
   body_text_coll<- tibble(url = totalarticles$webUrl[i], text = paste(body_text, collapse = " "))
   body_text_tot <- bind_rows(body_text_tot, body_text_coll)
 }
