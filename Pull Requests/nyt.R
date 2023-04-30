@@ -6,16 +6,14 @@ library(httr)
 library(dplyr)
 library(purrr)
 
-keys <- c("&api-key=m3IKHavEa8WMAAlDxRTi5dlQG6GPBQAN",
-          "&api-key=gDxQ32ZZfP8KarCN5MrGdmrkeKfkko7u",
-          "&api-key=HG44jd3IZorXQ4m6DDf0Nh26ba1Mlaoa",
-          "&api-key=Cg6eP60vTxQAEtZoez9YccqiF9CHCyCA",
-          "&api-key=CunYbsfgJWDXmpfcvKnoW1G3TBAY6grG")
+keys <- c("&api-key=Lz5guEwUYKWXOq5nj16QHHoCM0oXNTbG",
+          "&api-key=erXzxaQTLtbEXMNxA5IqsuWHpxYCUyb7",
+          "&api-key=gDxQ32ZZfP8KarCN5MrGdmrkeKfkko7u")
 
 
 key <- keys[1]
-link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=biden"
-dates <- ymd('20210605') + 0:210
+link <- "https://api.nytimes.com/svc/search/v2/articlesearch.json?q=biden" # you can adjust the keyword after q
+dates <- ymd('20200101') + 0:730 # you can adjust the time range of pull request
 d <- format(dates,'%Y%m%d')
 
 totalarticles <- NULL
@@ -73,8 +71,7 @@ article <- NULL
 body_text_tot <- NULL
 failures <- 0
 
-# updated version of text pulling code
-for (i in 1347:length(totalarticles$web_url)) {
+for (i in 1:length(totalarticles$web_url)) {
   tryCatch({
     response <- GET(totalarticles$web_url[i])
     if (response$status_code == 500) {
@@ -106,20 +103,9 @@ for (i in 1347:length(totalarticles$web_url)) {
     else {
       cat("API request failed with status code", response$status_code, "\n")
       break
-    }
-  }, error = function(e) {
-    cat("Error in API request:", conditionMessage(e), "\n")
-    break
+      }
+    }, error = function(e) {
+      cat("Error in API request:", conditionMessage(e), "\n")
+      break
   })
 }
-
-
-# for (i in 819:length(totalarticles$web_url)) {
-#   article <- read_html(totalarticles$web_url[i])
-#   body_text <- 
-#     article %>% 
-#     html_elements(".css-at9mc1.evys1bk0") %>% 
-#     html_text()
-#   body_text_coll<- tibble(url = totalarticles$web_url[i], text = paste(body_text, collapse = " "))
-#   body_text_tot <- bind_rows(body_text_tot, body_text_coll)
-# }

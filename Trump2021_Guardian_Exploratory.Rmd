@@ -168,8 +168,6 @@ section_words %>%
 ```
 
 ```{r}
-# Still a graph of positive v.s. negative by section on ratio aspect
-# TO DO: same as above.
 section_words %>% 
   anti_join(stop_words, by = "word") %>% 
   anti_join(mystopwords, by = "word") %>% 
@@ -193,29 +191,57 @@ section_words %>%
 ```
 
 ```{r}
-tidy_body_text_tot %>% 
-  rename(webUrl = url) %>% 
-  left_join(totalarticles, by = "webUrl") %>% 
-  select(webPublicationDate, text, webUrl) %>% 
-  mutate(date = str_trunc(webPublicationDate, 10, ellipsis = "")) %>% 
-  mutate(date = ymd(date)) %>% 
-  unnest_tokens(word, text) %>% 
-  anti_join(stop_words) %>% 
-  anti_join(mystopwords) %>% 
+trump_guardian_time <- full_trump_guardian %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
   inner_join(get_sentiments("afinn")) %>% 
-  group_by(date, webUrl) %>% 
+  group_by(date, url) %>% 
   summarize(art_score = mean(value)) %>% 
   group_by(date) %>% 
-  summarize(day_score = mean(art_score)) %>% 
-  ggplot(aes(x = date, y = day_score, group = 1)) +
-  geom_line() + 
+  summarize(day_score = mean(art_score))
+
+biden_guardian_time <- full_biden_guardian %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
+  filter(date >= "2020-01-01") %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, url) %>% 
+  summarize(art_score = mean(value)) %>% 
+  group_by(date) %>% 
+  summarize(day_score = mean(art_score))
+
+trump_nyt_time <- full_trump_nyt %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, url) %>% 
+  summarize(art_score = mean(value)) %>% 
+  group_by(date) %>% 
+  summarize(day_score = mean(art_score))
+
+biden_nyt_time <- full_biden_nyt %>% 
+  rename(url = web_url) %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, url) %>% 
+  summarize(art_score = mean(value)) %>% 
+  group_by(date) %>% 
+  summarize(day_score = mean(art_score))
+  
+ggplot() +
+  geom_smooth(data = trump_guardian_time, aes(x = date, y = day_score, color = 'Trump Guardian'), se = FALSE) + 
+  geom_smooth(data = biden_guardian_time, aes(x = date, y = day_score, color = 'Biden Guardian'), se = FALSE) + 
+  geom_smooth(data = trump_nyt_time, aes(x = date, y = day_score, color = 'Trump NYT'), se = FALSE) + 
+  geom_smooth(data = biden_nyt_time, aes(x = date, y = day_score, color = 'Biden NYT'), se = FALSE) + 
   geom_hline(yintercept = 0) +
-  geom_vline(xintercept = mdy('11-08-2020'),color='red') +
-  geom_smooth(se=FALSE)+
-  scale_colour_brewer(palette = "Set1") +
-  scale_x_date(date_breaks="2 month", date_labels="%m-%Y") +
-  labs(title = "Guardian 2020 through 2022",
-       subtitle = "Sentiment Score for Trump by Month") +
+  geom_vline(xintercept = mdy('11-08-2020'),color='black') +
+  scale_color_manual(name='',
+                     breaks=c('Trump Guardian', 'Trump NYT', 'Biden Guardian', 'Biden NYT'),
+                     values=c('Trump Guardian' = "brown", 'Trump NYT' = "red", 'Biden Guardian' = "blue", 'Biden NYT' = "blue4"))+
+  scale_x_date(date_breaks="4 month", date_labels="%m-%Y") +
+  labs(title = "Guardian and NYT 2020 through 2022",
+       subtitle = "Average Sentiment Score for Trump and Biden Quarterly") +
   xlab("") +
   ylab("Score") + theme_classic()
 ```
