@@ -1,17 +1,18 @@
 ---
-title: "FinalReport"
+title: "The 2020 presidential election: A Sentiment Analysis of News Media Coverage on Joe Biden and Donald Trump"
 author: '"Cecelia Kaufmann, Yiyang Shi, and Tam Nguyen"'
 date: '2023-04-18'
 output: html_document
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, error = TRUE, tidy = FALSE, message = FALSE, cache.extra = packageVersion("tufte"))
+knitr::opts_chunk$set(echo = FALSE, error = TRUE, tidy = FALSE, message = FALSE, cache.extra = packageVersion("tufte"))
 library(tidyverse)
 library(dplyr)
 library(lubridate)
 library(urltools)
 library(scales)
 library(textdata)
+# need to be installed 
 library(wordcloud)
 library(igraph) 
 library(ggplot2)
@@ -19,7 +20,6 @@ library(tidytext)
 library(broom)
 library(reshape2)
 library(rvest)
-library(igraph)
 library(tm)
 library(ggraph)
 library(SnowballC)
@@ -27,57 +27,375 @@ data("stop_words")
 mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
 ```
 
-# Inttroduction
-## About our project:
+# Introduction to Our Project
+Our project aims to explore the connection between how the two main candidates in the 2020 U.S. presidential election, Joe Biden and Donald Trump were portrayed in the media via sentiment analysis. To do this, we used the AFINN lexicon to longitudinally explore trends over the span of 2 years, from 2020 to 2022 to see there were connections between specific events in the world or in the candidates lives and how the media portrayed the candidates. To explore this further, we picked a news source from within the United States, the New York Times and one from the U.K., the Guardian, to see if the trends differ domestically versus internationally.
 
-## Research Question(s):
+# Motivations to Our Research Question
 
-How Differently Did Domestic Newspapers and International Newspapers Portray Donald Trump and Joe Biden before and after The 2020 U.S. Presidential Election?
+We decided to use sentiment analysis to approach our analysis of the articles and article text. Through our discussions, we found that sentiment analysis will help to gain a deeper understanding of how newspapers portray the two leading candidates for the U.S. 2020 election and how that changed over the span of two years. Before we can get into our data collection process and analysis of articles, it is important we define key terms and packages that we used to be able to analyze our data in a concise manner. 
 
-Are certain events indicators of how the newspaper will portray a specific candidate?
+## About Sentiment Analysis 
+  Sentiment analysis, which is also sometimes referred to as opinion mining is a way to use natural language processing (NLP) to identify the emotional tone behind a body of text. Through different types of lexicons, a word or string of words can be identified as positive, negative, or neutral. 
 
+## Lexicons and the "AFINN" lexicon
+For lexicon-based sentiment analysis, which we used for this research, words in the text are labeled as positive or negative with the help of a valence dictionary. For this research, we used the AFINN lexicon, which assigns words with a score between -5 and 5, with a more negative score indicating a more negative word and vice versa. We felt for this research that a weighted lexicon dictionary would make the most sense, especially since we are comparing over time and a lot of words. One thing to note about the AFINN lexicon is many of the words that are ranked the most negative (-5) are words that have profanities or are extremely offensive. Although some of these words are featured as quotes in articles we pulled, we decided against including them in our visualizations, filtering them out when needed. 
 
-## About our datasets
-Here is a breakdown of all the datasets we are using:
-  New York Times API 
-    Keyword: Trump, Dates: 1-1-2020 through 11-8-2020
-    Keyword: Trump, Dates: 1-1-2021 through 1-1-2022
-    Keyword: Biden, Dates: 1-1-2020 through 11-8-2020
-    Keyword: Biden, Dates: 1-1-2021 through 1-1-2022
-  The Guardian API
-    Keyword: Trump, Dates: 1-1-2020 through 11-8-2020
-    Keyword: Trump, Dates: 1-1-2021 through 1-1-2022
-    Keyword: Biden, Dates: 1-1-2020 through 11-8-2020
-    Keyword: Biden, Dates: 1-1-2021 through 1-1-2022
-
-For both NYT and Guardian, we then pulled the text for all of the articles (though sometimes we could only pull a subset of the articles)
-
-
-Because we are analyzing news media and their opinion on the presidential candidates, it was important for us to get our hands on articles written about Trump and Biden 1 year leading up to election and 1 year after election day. The way we did it was we used the jsonlite package in R to pull essential information from each newspaper's APIs (NYT and the Guardian). The data we have include article title, url, word count and date of publication. However, APIs did not provide us with full text of each article. Afraid we might not have enough text to work with, we decided to webscrape the full text of the articles using a CSS selector unique to each newspaper.
-
-One key factor to identity is the type of new sources we were able to pull articles and information from. Initially, we wanted to identify four news sources that spanned across the political spectrum (in U.S. politic terms, from left to right). Unfortunately, in our initial research and given the scope of the project, we were only able to get access to free and "easily" available. On the domestic level, that ended up being the New York Times which is a left leaning newspaper. On the international level, it ended up being the Guardian, which is also a left leaning paper out of the U.K. Therefore, we can assume there may be some bias in our data because of the news sources' political alignments-- Trump would be portrayed in a more negative light compared to Biden. 
-
-## About Sentiment Analysis and Why We Are Using it for Our Research
-  Sentiment analysis, which is also sometimes referred to as opinion mining is a way to use natural language processing (NLP) to identify the emotional tone behind a body of text. Through different types of lexicons, a word or string of words can be identified as positive, negative, or neutral. In performing sentiment analysis, we are hoping to gain a deeper understanding on how the newspapers portray the two leading candidates for the U.S. Presidental Election in 2020, and how that changed over the span on two years.  
-### Lexicons and the "AFINN"
-lexicon
-For lexicon-based sentiment analysis, which we used for this research, words in the text are labeled as positive or negative with the help of a valence dictionary. For this research, we used the AFINN lexicon, which assigns words with a score between -5 and 5, with a more negative score indicating a more negative word and vice versa. We felt for this research that a weighted lexicon dictionary would make the most sense, especially since we are comparing over time and a lot of words. One thing to note about the AFINN lexicon is many of the words that are ranked the most negative (-5) are words that have profanities or are extremely offensive. Although some of these words are featured as quotes in articles we pulled. We decided against including them in our visualizations, filtering them out when needed. 
-
-### Stop Words
+## Stop Words
 We also used a stop_words library in our data analysis. The stop_words library removed common words like "if", "but", "we", "of", and "they". Firstly, removing these words do not change the over all semantics of the text one is analyzing and secondly, doing this can sometimes improve the performance of the model. We also created our own list of stop words, which we included names of candidates and other common words not removed from the stop_words library (like "here's", "it's", and "jr") because they are common words that would affect our sentiment analysis but removed would not affect the overall meaning. 
 
-### Stemming and the SnowballC package (Porter Algorithm)
+## Stemming and the SnowballC package (Porter Algorithm)
 
 We also utilized a stemming algorithm (Porter's Algorithm) to reduce the number of words we are analyzing without minimizing the analysis. With the SnowballC package, we can reduce the words to their base or root form. For example, "ran" and "running" would just be reduced to the stem "run". This streamlines the process of sentiment analysis. 
 
+# About our Datasets
+Here is a breakdown of all the datasets we are using:
+Our datasets are as follows:
+New York Times:
+Keyword: “trump”, Dates: January 1st, 2020 through January 1st, 2022
+Keyword: “biden”, Dates: January 1st, 2020 through January 1st, 2022
 
-# Ethical issues (who may be harmed and who may benefit)
+Guardian:
+New York Times:
+Keyword: “trump”, Dates: January 1st, 2020 through January 1st, 2022
+Keyword: “biden”, Dates: January 1st, 2020 through January 1st, 2022
 
-To our understanding, we feel that very feel people could be harmed by the outcome of our work. Just given that we are using information that is already out in the world, we don't have to be particularly concerned about how the information may harm someone. Our only concern/something we need to pay specfic attention to is how we analyze the data. If we analyze something out of context and don't give our audience the correct information, that could be concerning and misleading but not particularly harmful.
+NOTE: To load our data sets, one will need to download the data set file and then one will be able to run the code from their own device. 
 
-As for those who may benefit, we think that our work could give new insight to members of the political science community or people that are interested in the intersection of election work, journalism, and data. Sentiment analysis is critical to understanding how tone and words can affect outcomes, and it is interesting to see the difference between domestic and international word choice, frequencies, and tonality on different stages. This could be insightful for political scientists in considering election data. 
+For both NYT and Guardian, we originally pulled the metadata which included about 20 variables, most notably the headline, url, date published, and section name. After we pulled the metadata information, we pulled the text for all the articles. This was an incredibly time consuming process, taking basically up until the second to last week of the semester to get all of our data together to make visualizations that show a full picture of our research question. We had to write code that would pull multiple API’s and loop through the data, which took up to 6 hours on one computer to pull all the data. To understand the scale, we estimate in total we have information for about 30,000 to 40,000 articles in total between the New York Times and the Guardian. Because of the nature of the data (using API’s and webscraping), we are the ones who created the dataset!
 
-# Exploratory Analysis 
-##Time Series Graphs
-To begin our exploration, we are going to look at the sentiment of articles for both candidates across time, from both different newspapers. Our hope to to be able to isolate a pattern or specific dips and rises in the graph and look into the reasons for that. 
+For both the New York Times and the Guardian, their data is open source if you sign up through their developer portal to get API keys, which are essentially passwords that allow you to interact with their data. Because of the sheer volume of the articles we had to pull, and concerns with overwhelming the pull requests (a security measure in place specifically for the NYT), we constructed code to loop through a number of different API’s that would then pull this metadata. The code itself was constructed based on the status code that produced by each pull request. For example, “200” status code means the pull request was successful. In this case, we keep pulling with the same API key.  “429” status code means the daily limit reached for the current API key. In this situation, we pause 3 minutes and iterate to the next API key registered by a different email address. After doing that, we wanted to expand the amount of text available to analyze, so we used a CSS selector to webscrape the article text data from each article for each candidate from each newspaper. Guardian has a different way of stopping developers who do not have membership to pull too many articles. Instead of setting a daily limit for each API key like NYT, Guardian iterates a series of CSS selectors on their webpage, so it’s time-consuming to locate each of the CSS selector and pull every article. 
 
+Once we did that, we had to standardize the text, so we had to do a lot of cleaning of the data to remove the punctuations from the text and format all the text so it is lowercase. From there, we unnested the tokens (or the words) from the text we had, so we can later use the AFINN lexicon to analyze the text on a word by word level. We then used the anti_join function to return only the words that do not show up in our standard stop_words and our personal stopwords (mystopwords) lists. Lastly, we created a variable called stem which as described earlier performing the stemming algorithm so we only have root words. 
+
+For performing time series analysis, we needed to eventually merge our two data sets for the different time periods for each candidate into one data set which would then give one cohesive data set from 2020 to 2022 for each of the candidates for each of the news sources, or four very long data sets. 
+
+One thing to note about the data sets we use in our analysis, The New York Times and The Guardian. Initially, we wanted to identify four news sources that spanned across the political spectrum (in U.S. politic terms, from left to right). Unfortunately, in our initial research and given the scope of the project, we were only able to get access to free and "easily" available. On the domestic level, that ended up being the New York Times which is a left leaning newspaper. On the international level, it ended up being the Guardian, which is also a left leaning paper out of the U.K. Therefore, we can assume there may be some bias in our data because of the news sources' political alignments-- Trump would be portrayed in a more negative light compared to Biden. 
+
+
+
+# Data cleaning for New York Times (Biden and Trump)
+
+Below is the code that was described above that will clean the data for the Joe Biden and Donald Trump data sets for the New York Times
+
+```{r}
+# Biden 
+load("biden_nytimes_2020.RData")
+load("biden_nytimes_2020_text.RData")
+load("biden_nytimes_2021.RData")
+load("biden_nytimes_2021_text.RData")
+
+bidenbefore <- totalarticles %>% 
+  select(headline, abstract, pub_date, section_name, web_url)
+
+tidy_body_text_tot <- body_text_tot %>%
+  # remove puncuations
+  mutate(text = str_remove_all(text, "[:punct:]")) %>% 
+  filter(text != "")
+
+tidy_biden <- tidy_body_text_tot %>%
+  #unnest tokens
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>%
+  #mutate in stem
+  mutate(stem = wordStem(word)) 
+
+
+bidenafter <- totalarticles %>% 
+  select(headline, abstract, pub_date, section_name, web_url)
+
+tidy_body_text_tot_bidenafter <- body_text_tot %>%
+  mutate(text = str_remove_all(text, "[:punct:]")) %>% 
+  filter(text != "")
+
+tidy_biden_after <- tidy_body_text_tot_bidenafter %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>%
+  mutate(stem = wordStem(word)) 
+
+# Join the two data sets to create full_biden_nyt
+biden_before_timeseries <- tidy_biden %>% 
+  rename(web_url = url) %>% 
+  left_join(bidenbefore, by = "web_url")
+biden_after_timeseries <- tidy_biden_after %>%   rename(web_url = url) %>% 
+  left_join(bidenafter, by = "web_url")
+
+full_biden_nyt <-
+  rbind(biden_after_timeseries, biden_before_timeseries)
+```
+
+```{r}
+#Trump 
+#This is the Trump NYT data set which already has the text merged together
+load("C:/Users/cecei/Desktop/comp465/Articles Data/Trump_NYT_Before_Fulltext.RData")
+# Trump After
+load("C:/Users/cecei/Desktop/comp465/Articles Data/trump_nytimes_2021.RData")
+load("C:/Users/cecei/Desktop/comp465/Articles Data/trump_nytimes_2021_text.RData")
+
+# Same process as with Biden data
+trumpbefore <- nyt_trump_before_fulltext %>% 
+  select(headline, text, abstract, pub_date, section_name, url)
+
+tidy_body_text_tot_trumpbefore <- trumpbefore %>%
+  mutate(text = str_remove_all(text, "[:punct:]")) %>% 
+  filter(text != "")
+
+
+tidy_trump_before <- tidy_body_text_tot_trumpbefore %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  mutate(stem = wordStem(word))
+
+trumpafter <- totalarticles %>% 
+  select(headline, abstract, pub_date, section_name, web_url) %>%
+  rename(url = web_url)
+
+tidy_body_text_tot_trumpafter <- body_text_tot %>%
+  mutate(text = str_remove_all(text, "[:punct:]")) %>% 
+  filter(text != "")
+
+
+tidy_trump_after <- tidy_body_text_tot_trumpafter %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  anti_join(mystopwords) %>% 
+  mutate(stem = wordStem(word))
+
+# Creates the full_trump_nyt data set
+trump_before_timeseries <- tidy_trump_before 
+trump_after_timeseries <- tidy_trump_after %>%   
+  left_join(trumpafter, by = "url")
+
+full_trump_nyt <-
+  rbind(trump_after_timeseries, trump_before_timeseries)
+```
+
+
+To bypass the original datacleaning shown above, there is also the RData file below which has both full_biden_nyt and full_trump_nyt already cleaned
+```{r}
+load("NYTArticles.RData")
+```
+
+
+Now that we have the data sets, we can take a look at the trends. First we will construct a time series graph, where we calculate the day score for the articles over one day. Not the green line is U.S. Election Day 2020 or November 4th, 2020. 
+
+```{r}
+  NYT_Biden_Articles <- 
+  full_biden_nyt %>% 
+  select(pub_date, section_name, word, web_url, headline) %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date,web_url) %>% 
+  summarize(art_score = mean(value))  %>%
+  group_by(date) %>%
+  summarize(day_score = mean(art_score))
+  
+  
+ NYT_Biden_Articles %>%
+  ggplot(aes(x = date, y = day_score, group = 1)) +
+  geom_line() + 
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = mdy('11-04-2020'),color='green') +
+  geom_smooth(se=FALSE)+
+  scale_colour_brewer(palette = "Set1") +
+  scale_x_date(date_breaks="2 month", date_labels="%m-%Y") +
+  labs(title = "New York Times 2020 through 2022",
+       subtitle = "Average Sentiment Score for Biden") +
+  xlab("") +
+  ylab("Score") + theme_classic()
+```
+
+
+As we can see from this graph, the sentiment score for Biden trends negative, with it beginning positively as the beginning of 2020 and then decreasing throughout the year, but remaining pretty consistent throughout the rest of the timeline. There isn’t much of a shift after the election (indicated by the green line), or even after January 6th or the inauguration on January 20th, 2021. 
+
+Although this graph shows trends, it is worth taking a look at the specific days where there are the highest peaks and lowest dips. What was going on those days?
+
+```{r}
+NYT_Biden_Articles %>% filter(day_score > 0.5) %>% arrange(desc(day_score)) 
+```
+
+Let's look at what was going on a few of the days that recieved the highest day score:
+
+February 23rd and 22nd 2020 were the days during this time period where articles were most positive about Joe Biden. Although there doesn't seem to be a specific event to indicate why, Bernie Sanders, another Democratic challenger in the primary had won Nevada and Biden had just given a positively received interview on Face the Nation, a news program. 
+December 25th, 2020 is Christmas 2020. This could just indicate positive emotions because of a holiday. 
+March 8th, 2020 is the day now Vice President Kamala Harris endorsed Joe Biden for President of the United States
+
+Now, lets look at the days that recieved the worst scores for Joe Biden
+
+```{r}
+NYT_Biden_Articles %>% filter(day_score < -1) %>% arrange(day_score) 
+```
+Only one day received a day score below negative one. One June 2nd, during the height of the civil unrest in the U.S. Biden gave a speech that called for the end to the violence. On the 6th of June, CNN had projected that he secured enough delegates for the Democratic nomination for president. 
+
+To break this down further, it is worth looking at the percentage of positive and negative articles for Joe Biden, both overall and by month
+
+```{r}
+percentage_biden <- full_biden_nyt %>%
+  group_by(pub_date, web_url) %>%
+  unnest_tokens(word, word) %>%
+  mutate(date = as.Date(pub_date)) %>%
+  ungroup() %>%
+  select(-pub_date) %>%
+  anti_join(stop_words) %>%
+  inner_join(get_sentiments("afinn")) %>%
+  group_by(date, web_url) %>%
+  summarize(art_score = mean(value) ) %>%
+  ungroup()
+
+percentage_biden %>%
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>%
+  count(isPositive) %>%
+  mutate(totalArt = sum(n), percent = n/totalArt)
+```
+Overall, 7,090 articles or 40% of the articles for Joe Biden were ruled positive. 10,253 or 59% were rulled negative. 
+
+
+```{r}
+isPositivebiden <- percentage_biden %>%
+  mutate(ym = str_sub(date, 1,7 )) %>%
+  group_by(web_url, ym) %>%
+  summarize(art_score) %>%
+  ungroup() %>%
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>%
+  group_by(ym) %>%
+  count(isPositive) %>%
+  mutate(totalArt = sum(n), percent = n/totalArt)
+
+isPositivebiden %>%
+  ggplot(aes(y = ym, x = percent, fill = isPositive)) +
+  geom_col()+
+  labs(title = "Percentages of New York Times Articles on Biden by Month",
+       x = "",
+       y = "", 
+       fill = "Positive Article?" )
+```
+Here is a graph that shows the percentage breakdown by month, with 2020 at the bottom and 2022 at the top. We can more clearly see where there are more negative articles than positive and how that can dynamically change over months. 
+
+# Trump New York Times
+ 
+Now that we have looked at the trends regarding Joe Biden, let's do the same for Donald Trump
+
+```{r}
+NYT_Trump_ArticleScores <-  full_trump_nyt %>% 
+ select(pub_date, word, url) %>% 
+ mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>% 
+  unnest_tokens(word, word) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date,url) %>% 
+  summarize(art_score = mean(value))  %>%
+  group_by(date) %>%
+  summarize(day_score = mean(art_score)) 
+
+NYT_Trump_ArticleScores %>%
+  ggplot(aes(x = date, y = day_score, group = 1)) +
+  geom_line() + 
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = mdy('11-04-2020'),color='green') +
+  geom_smooth(se=FALSE)+
+  scale_colour_brewer(palette = "Set1") +
+  scale_x_date(date_breaks="2 month", date_labels="%m-%Y") +
+  labs(title = "New York Times 2020 through 2022",
+       subtitle = "Average Sentiment Score for Trump by Month") +
+  xlab("") +
+  ylab("Score") + theme_classic()
+```
+If we look at the overall trends of the graph, we can clearly see that besides a couple peaks in the graph, more or less the trend for sentiments for Trump articles is negative. Interestingly, there seems to be more variance as well as more positive days for Trump after the election (indicated by the green line). It’s a bit difficult to pinpoint the reason why but we can see that regardless of the broader variance post election, the general trend for the sentiment is overwhelmingly negative. 
+
+Although this graph shows trends, it is worth taking a look at the specific days where there are the highest peaks and lowest dips. What was going on those days?
+```{r}
+NYT_Trump_ArticleScores %>% filter(day_score > 0.5) %>% arrange(desc(day_score))
+```
+
+As we can see, there are only a few positive days. Let's look at the events that were going on around the top three scoring dates
+November 7th, 2021: Post election 2021 where there was discussion in paper about Trump conservatism wins. 
+December 25th, 2020: Christmas in the United States, potentially more positive sentiments because of the holiday. 
+October 31st, 2021: Trump allies are at a confrence about Saudi Arabian Investments. 
+
+
+```{r}
+NYT_Trump_ArticleScores %>% filter(day_score < -1) %>% arrange(day_score)
+```
+
+Let's look at the top three worst scoring days:
+October 23rd, 2021: No specific events relating to Trump
+October 10th, 2021: Congressional races ahead of election shed Trump in a negative light. 
+November 17th, 2021: Donald Trump seeks to block the January 6th investigations committee from moving forward. 
+
+Now let's look at the percentage breakdown by month for Trump:
+```{r}
+percentage_trump <- full_trump_nyt %>%
+  group_by(pub_date, url) %>%
+  unnest_tokens(word, word) %>%
+  mutate(date = as.Date(pub_date)) %>%
+  ungroup() %>%
+  select(-pub_date) %>%
+  anti_join(stop_words) %>%
+  inner_join(get_sentiments("afinn")) %>%
+  group_by(date, url) %>%
+  summarize(art_score = mean(value) ) %>%
+  ungroup()
+
+percentage_trump %>%
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>%
+  count(isPositive) %>%
+  mutate(totalArt = sum(n), percent = n/totalArt)
+```
+
+
+Out of the 10162 articles with the keyword "trump" from the New York Times, 6,923 or 68% were negative. 3,239 or almost 32% were positive. Let's break this down by month. 
+
+```{r}
+isPositiveTrump <- percentage_trump %>%
+  mutate(ym = str_sub(date, 1,7 )) %>%
+  group_by(url, ym) %>%
+  summarize(art_score) %>%
+  ungroup() %>%
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>%
+  group_by(ym) %>%
+  count(isPositive) %>%
+  mutate(totalArt = sum(n), percent = n/totalArt)
+
+isPositiveTrump %>%
+  ggplot(aes(y = ym, x = percent, fill = isPositive)) +
+  geom_col()+
+  labs(title = "Affective Percentages of New York Times Articles on Trump by Month",
+       x = "",
+       y = "", 
+       fill = "Positive?")
+```
+
+
+Now we can see the trends by month, were some months there are many more negative articles than positive, and other months were it is a bit more balanced. One thing to note, in January 2021 many of the articles are negative, which would show connection between the January 6th insurrection of the nations capital by Trump supporters and the how the New York Times wrote about Trump during the month. 
+
+#New York Times Conclusions
+
+Here is both of the time series graphs for Donald Trump and Joe Biden shown earlier put together:
+```{r}
+ggplot(NYT_Biden_Articles,(aes(x = date, y = day_score, group = 1))) +
+  geom_smooth(color = "blue") + 
+  geom_smooth(data = NYT_Trump_ArticleScores,(aes(y = day_score)), color = "red") +
+  scale_colour_brewer(palette = "Set1") +
+  scale_x_date(date_breaks="3 month", date_labels="%m-%Y") +
+   geom_vline(xintercept = mdy('11-04-2020'),color='green') +
+  labs(title = "New York Times 2020 through 2022",
+       subtitle = "Average Sentiment Score for 2020 U.S. Presidental Candidates Donald Trump
+(Red) and Joe Biden (Blue) Quarterly") +
+  xlab("") +
+  ylab("Score") 
+```
+
+In the New York Times between 2020 and 2022, articles written about Joe Biden were more positive than articles written about Donald Trump. In this time period, 40% of articles with the keyword “biden” were positive, compared to articles with the keyword “trump” at 31%. In general, many more days were negative (with a sentiment score value less than 1) for Trump compared to Biden and interestingly enough, for both candidates, their most positive days were days not during their presidential term. For Biden, this was in early 2020 and for Trump this was in 2021 after he was out of office. Overall, we can conclude that the New York Times fairly negative about both candidates but more positive about Joe Biden than Donald Trump during this time period.
+
+Biden Guardian:
+Trump Guardian:
+Biden and Trump Guardian:
+NYT and Guardian together:
+
+
+# Unanswered Questions and Limitations
+The process of sentiment analysis is extremely insightful for looking at candidates and how newspapers frame their articles about them. That being said, it’s difficult to make many conclusions beyond what is really seen reflected in the graphs. 
+# Final Conclusions
