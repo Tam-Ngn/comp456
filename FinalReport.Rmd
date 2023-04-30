@@ -59,7 +59,7 @@ New York Times:
 Keyword: “trump”, Dates: January 1st, 2020 through January 1st, 2022
 Keyword: “biden”, Dates: January 1st, 2020 through January 1st, 2022
 
-NOTE: To load our data sets, one will need to download the data set file and then one will be able to run the code from their own device. 
+NOTE: To load our data sets, one will need to download the data set file and then one will be able to run the code from their own device. In the loading area, where this is the "~/" this indicates that one needs to put in their own path to the data file for the file to properly load. 
 
 For both NYT and Guardian, we originally pulled the metadata which included about 20 variables, most notably the headline, url, date published, and section name. After we pulled the metadata information, we pulled the text for all the articles. This was an incredibly time consuming process, taking basically up until the second to last week of the semester to get all of our data together to make visualizations that show a full picture of our research question. We had to write code that would pull multiple API’s and loop through the data, which took up to 6 hours on one computer to pull all the data. To understand the scale, we estimate in total we have information for about 30,000 to 40,000 articles in total between the New York Times and the Guardian. Because of the nature of the data (using API’s and webscraping), we are the ones who created the dataset!
 
@@ -79,10 +79,10 @@ Below is the code that was described above that will clean the data for the Joe 
 
 ```{r}
 # Biden 
-load("biden_nytimes_2020.RData")
-load("biden_nytimes_2020_text.RData")
-load("biden_nytimes_2021.RData")
-load("biden_nytimes_2021_text.RData")
+load("~/biden_nytimes_2020.RData")
+load("~/biden_nytimes_2020_text.RData")
+load("~/biden_nytimes_2021.RData")
+load("~/biden_nytimes_2021_text.RData")
 
 bidenbefore <- totalarticles %>% 
   select(headline, abstract, pub_date, section_name, web_url)
@@ -128,10 +128,10 @@ full_biden_nyt <-
 ```{r}
 #Trump 
 #This is the Trump NYT data set which already has the text merged together
-load("C:/Users/cecei/Desktop/comp465/Articles Data/Trump_NYT_Before_Fulltext.RData")
+load("~/Trump_NYT_Before_Fulltext.RData")
 # Trump After
-load("C:/Users/cecei/Desktop/comp465/Articles Data/trump_nytimes_2021.RData")
-load("C:/Users/cecei/Desktop/comp465/Articles Data/trump_nytimes_2021_text.RData")
+load("~/trump_nytimes_2021.RData")
+load("~/trump_nytimes_2021_text.RData")
 
 # Same process as with Biden data
 trumpbefore <- nyt_trump_before_fulltext %>% 
