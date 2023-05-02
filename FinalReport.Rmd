@@ -175,13 +175,13 @@ full_trump_nyt <-
 
 To bypass the original datacleaning shown above, there is also the RData file below which has both full_biden_nyt and full_trump_nyt already cleaned
 ```{r}
-load("NYTArticles.RData")
+load("~/NYTArticles.RData")
 ```
 
 
 Now that we have the data sets, we can take a look at the trends. First we will construct a time series graph, where we calculate the day score for the articles over one day. Not the green line is U.S. Election Day 2020 or November 4th, 2020. 
 
-```{r}
+```{r, message = FALSE}
   NYT_Biden_Articles <- 
   full_biden_nyt %>% 
   select(pub_date, section_name, word, web_url, headline) %>% 
@@ -232,7 +232,7 @@ Only one day received a day score below negative one. One June 2nd, during the h
 
 To break this down further, it is worth looking at the percentage of positive and negative articles for Joe Biden, both overall and by month
 
-```{r}
+```{r, message=FALSE}
 percentage_biden <- full_biden_nyt %>%
   group_by(pub_date, web_url) %>%
   unnest_tokens(word, word) %>%
@@ -250,11 +250,11 @@ percentage_biden %>%
   count(isPositive) %>%
   mutate(totalArt = sum(n), percent = n/totalArt)
 ```
-Overall, 7,090 articles or 40% of the articles for Joe Biden were ruled positive. 10,253 or 59% were rulled negative. 
+Overall, 7,090 articles or 40% of the articles for Joe Biden were ruled positive. 10,253 or 59% were ruled negative. 
 
 
-```{r}
-isPositivebiden <- percentage_biden %>%
+```{r, message=FALSE}
+percentage_biden %>%
   mutate(ym = str_sub(date, 1,7 )) %>%
   group_by(web_url, ym) %>%
   summarize(art_score) %>%
@@ -262,15 +262,14 @@ isPositivebiden <- percentage_biden %>%
   mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>%
   group_by(ym) %>%
   count(isPositive) %>%
-  mutate(totalArt = sum(n), percent = n/totalArt)
-
-isPositivebiden %>%
+  mutate(totalArt = sum(n), percent = n/totalArt) %>%
   ggplot(aes(y = ym, x = percent, fill = isPositive)) +
   geom_col()+
-  labs(title = "Percentages of New York Times Articles on Biden by Month",
+  labs(title = "Percentages of Positive Versus Negative New York Times Articles on Biden by Month",
        x = "",
        y = "", 
-       fill = "Positive Article?" )
+       fill = "Article Score" ) +
+  scale_fill_discrete(labels=c('Negative', 'Positive'))
 ```
 Here is a graph that shows the percentage breakdown by month, with 2020 at the bottom and 2022 at the top. We can more clearly see where there are more negative articles than positive and how that can dynamically change over months. 
 
@@ -278,7 +277,7 @@ Here is a graph that shows the percentage breakdown by month, with 2020 at the b
  
 Now that we have looked at the trends regarding Joe Biden, let's do the same for Donald Trump
 
-```{r}
+```{r, message=FALSE}
 NYT_Trump_ArticleScores <-  full_trump_nyt %>% 
  select(pub_date, word, url) %>% 
  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
@@ -348,8 +347,8 @@ percentage_trump %>%
 
 Out of the 10162 articles with the keyword "trump" from the New York Times, 6,923 or 68% were negative. 3,239 or almost 32% were positive. Let's break this down by month. 
 
-```{r}
-isPositiveTrump <- percentage_trump %>%
+```{r, message=FALSE}
+percentage_trump %>%
   mutate(ym = str_sub(date, 1,7 )) %>%
   group_by(url, ym) %>%
   summarize(art_score) %>%
@@ -357,15 +356,13 @@ isPositiveTrump <- percentage_trump %>%
   mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>%
   group_by(ym) %>%
   count(isPositive) %>%
-  mutate(totalArt = sum(n), percent = n/totalArt)
-
-isPositiveTrump %>%
+  mutate(totalArt = sum(n), percent = n/totalArt) %>%
   ggplot(aes(y = ym, x = percent, fill = isPositive)) +
   geom_col()+
-  labs(title = "Percentages of New York Times Articles on Trump by Month",
+  labs(title = "Percentages of Positive Versus Negative New York Times Articles on Trump by Month",
        x = "",
-       y = "", 
-       fill = "Positive?")
+       y = "", fill = "Article Score" ) +
+  scale_fill_discrete(labels=c('Negative', 'Positive'))
 ```
 
 
