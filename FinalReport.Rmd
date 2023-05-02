@@ -362,7 +362,7 @@ isPositiveTrump <- percentage_trump %>%
 isPositiveTrump %>%
   ggplot(aes(y = ym, x = percent, fill = isPositive)) +
   geom_col()+
-  labs(title = "Affective Percentages of New York Times Articles on Trump by Month",
+  labs(title = "Percentages of New York Times Articles on Trump by Month",
        x = "",
        y = "", 
        fill = "Positive?")
@@ -397,5 +397,6 @@ NYT and Guardian together:
 
 
 # Unanswered Questions and Limitations
-The process of sentiment analysis is extremely insightful for looking at candidates and how newspapers frame their articles about them. That being said, it’s difficult to make many conclusions beyond what is really seen reflected in the graphs. 
+The process of sentiment analysis is extremely insightful for looking at candidates and how newspapers frame their articles about them. That being said, it’s difficult to make many conclusions beyond what is really seen reflected in the graphs. The furthest conclusions we can make are by looking at the graph trend, looking at the date(s), and then looking to see if the trend could correlate with the event that happened for the candidate that day. 
+In terms of limitations, as mentioned earlier, we were only able to gain access to left leaning newspapers. It would have been interesting to compare more moderate or right leaning newspapers, given we would infer that these sources would "rate" Donald Trump higher than Joe Biden in terms of article scores. 
 # Final Conclusions
