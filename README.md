@@ -2,6 +2,8 @@
 
 Yiyang Shi, Cecelia Kaufmann, Tam Nguyen
 
+Completed for Comp/Stat 456 at Macalester College
+
 ## About our project:
 
 Our project aims to explore the connection between how the two main candidates in the 2020 U.S. presidential election, Joe Biden and Donald Trump were portrayed in the media via sentiment analysis.
@@ -22,7 +24,7 @@ The report of our finding and visualizations is in "FinalReport.Rmd," which incl
 
 ## To reproduce our analysis:
 
-### 1. Data Acquisition 
+### 1. Data Acquisition
 
 To pull the articles from NYTimes and Guardian, you will need to register at least one API key from their developer's website ([NYTimes](https://developer.nytimes.com/apis), [Guardian](https://open-platform.theguardian.com/access/)). Both NYTimes and Guardian set a limit on the number of pull requests you can make per day (500 requests/day if using developer key, unlimited requests/day if using commercial key)
 
@@ -176,4 +178,4 @@ data("stop_words")
 mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
 ```
 
-"FinalReport.Rmd" includes the background information about our project, espcially, research questions, motivations, and lexicons, etc. It also has specific introduction on our data sets. It also gives a clear demonstration on data preparation for the analysis, conclusion we reached to, and limitatons of our project.
+"FinalReport.Rmd" includes the background information about our project, espcially, research questions, motivations, and lexicons, etc. It also has specific introduction on our data sets. It also gives a clear demonstration on data preparation for the analysis, conclusion we reached to, and limitations of our project.
