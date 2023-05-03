@@ -1,3 +1,12 @@
+library(jsonlite)
+library(tidyverse)
+library(lubridate)
+library(rvest)
+library(httr)
+library(dplyr)
+library(purrr)
+
+
 key <- "&api-key=395b850e-d5c2-4414-aed5-02beddcbbd23"
 url <- "https://content.guardianapis.com/search?q=trump&from-date=2020-01-01&to-date=2020-01-01&page=1"
 req <- fromJSON(paste0(url, key))
