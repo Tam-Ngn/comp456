@@ -23,6 +23,7 @@ library(rvest)
 library(tm)
 library(ggraph)
 library(SnowballC)
+library(widyr)
 data("stop_words")
 mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
 ```
@@ -368,7 +369,7 @@ percentage_trump %>%
 
 Now we can see the trends by month, were some months there are many more negative articles than positive, and other months were it is a bit more balanced. One thing to note, in January 2021 many of the articles are negative, which would show connection between the January 6th insurrection of the nations capital by Trump supporters and the how the New York Times wrote about Trump during the month. 
 
-#New York Times Conclusions
+# New York Times Conclusions
 
 Here is both of the time series graphs for Donald Trump and Joe Biden shown earlier put together:
 ```{r}
@@ -387,13 +388,173 @@ ggplot(NYT_Biden_Articles,(aes(x = date, y = day_score, group = 1))) +
 
 In the New York Times between 2020 and 2022, articles written about Joe Biden were more positive than articles written about Donald Trump. In this time period, 40% of articles with the keyword “biden” were positive, compared to articles with the keyword “trump” at 31%. In general, many more days were negative (with a sentiment score value less than 1) for Trump compared to Biden and interestingly enough, for both candidates, their most positive days were days not during their presidential term. For Biden, this was in early 2020 and for Trump this was in 2021 after he was out of office. Overall, we can conclude that the New York Times fairly negative about both candidates but more positive about Joe Biden than Donald Trump during this time period.
 
-Biden Guardian:
-Trump Guardian:
-Biden and Trump Guardian:
-NYT and Guardian together:
+
+# Biden Guardian
+
+```{r}
+#getting the data ready
+score_per_url <- guardian_biden %>% 
+  mutate(hasBiden = str_detect(text, "Biden|biden")) %>% 
+  filter(hasBiden == TRUE) %>% #make sure the text contains the word Biden
+  group_by(webPublicationDate, webUrl) %>% 
+  unnest_tokens(word, text) %>% 
+  mutate(date = as.Date(webPublicationDate)) %>% 
+  ungroup() %>% 
+  select(-webPublicationDate) %>% 
+  anti_join(stop_words) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, webUrl) %>% 
+  summarize(art_score = mean(value) ) %>% 
+  ungroup()
+
+
+#finding the overall percentages
+
+score_per_url %>% 
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>% 
+  count(isPositive) %>% 
+  mutate(totalArt = sum(n), percent = n/totalArt)
+
+```
+
+Overall, 73.68% of Guardian articles written about Biden is negative, compared to a 26.32% percent for postives.  
+
+```{r stacked bar chart for Biden Guardian}
+plot1 <- score_per_url %>% 
+  mutate(ym = str_sub(date, 1,7 )) %>% 
+  group_by(webUrl, ym) %>% 
+  summarize(art_score) %>% 
+  ungroup() %>% 
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>% 
+  group_by(ym) %>% 
+  count(isPositive) %>% 
+  mutate(totalArt = sum(n), percent = n/totalArt) %>% 
+  filter(ym(ym) > ymd("2019-12-31"), ym(ym) < ymd("2022-02-01") ) %>% 
+  ggplot(aes(y = ym, x = percent, fill = isPositive)) + 
+  geom_col()+
+  labs(title = "Affective Percentages of Guardian Articles on Biden by Month",
+       x = "",
+       y = "" )
+```
+
+
+# Trump Guardian
+
+```{r}
+#getting the data ready
+score_per_url_trump <- guardian_trump_full %>% 
+  group_by(webPublicationDate, webUrl) %>% 
+  unnest_tokens(word, text) %>% 
+  mutate(date = as.Date(webPublicationDate)) %>% 
+  ungroup() %>% 
+  select(-webPublicationDate) %>% 
+  anti_join(stop_words) %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, webUrl) %>% 
+  summarize(art_score = mean(value) ) %>% 
+  ungroup()
+
+
+#finding the overall percentages
+
+score_per_url_trump %>% 
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>% 
+  count(isPositive) %>% 
+  mutate(totalArt = sum(n), percent = n/totalArt)
+```
+
+Similarly for Trump, 74% of published articles were negative, as opposed to 26% that were positive. Compared to Biden, the statistics for Trump are only slightly worse.
+
+
+```{r}
+plot2 <- score_per_url_trump %>% 
+  mutate(ym = str_sub(date, 1,7 )) %>% 
+  group_by(webUrl, ym) %>% 
+  summarize(art_score) %>% 
+  ungroup() %>% 
+  mutate(isPositive = ifelse(art_score > 0, TRUE, FALSE)) %>% 
+  group_by(ym) %>% 
+  count(isPositive) %>% 
+  mutate(totalArt = sum(n), percent = n/totalArt) %>% 
+  filter(ym(ym) > ymd("2019-12-31")) %>% 
+  ggplot(aes(y = ym, x = percent, fill = isPositive)) + 
+  geom_col()+
+  labs(title = "Affective Percentages of Guardian Articles on Trump by Month",
+       x = "",
+       y = "" )
+```
+
+# Guardian Conclusion
+
+```{r put the graphs side by side fig.width= 6, fig.height= 3}
+library(patchwork)
+plot2 + plot1
+```
+
+
+A lot of blue bars fell under 0.25 for The Guardian, which further strengthens our hypothesis that the international newspaper has stronger negative feelings towards the presidential candidates. One thing they have in common though is the month of 2022-01 when no single positive articles were written about Trump. SImilarly, Biden scored the lowest positive proportion in the very same month and year . After a few google searches it was one year after the capitol insurrection, Trump was formally accused of 4 crimes and members of congress agreed he should be barred from holding office ever again  
+
+# NYT and Guardian together
+
+```{r}
+trump_guardian_time <- full_trump_guardian %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, url) %>% 
+  summarize(art_score = mean(value)) %>% 
+  group_by(date) %>% 
+  summarize(day_score = mean(art_score))
+
+biden_guardian_time <- full_biden_guardian %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
+  filter(date >= "2020-01-01") %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, url) %>% 
+  summarize(art_score = mean(value)) %>% 
+  group_by(date) %>% 
+  summarize(day_score = mean(art_score))
+
+trump_nyt_time <- full_trump_nyt %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, url) %>% 
+  summarize(art_score = mean(value)) %>% 
+  group_by(date) %>% 
+  summarize(day_score = mean(art_score))
+
+biden_nyt_time <- full_biden_nyt %>% 
+  rename(url = web_url) %>% 
+  mutate(date = str_trunc(pub_date, 10, ellipsis = "")) %>% 
+  mutate(date = ymd(date)) %>%   
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(date, url) %>% 
+  summarize(art_score = mean(value)) %>% 
+  group_by(date) %>% 
+  summarize(day_score = mean(art_score))
+  
+ggplot() +
+  geom_smooth(data = trump_guardian_time, aes(x = date, y = day_score, color = 'Trump Guardian'), se = FALSE) + 
+  geom_smooth(data = biden_guardian_time, aes(x = date, y = day_score, color = 'Biden Guardian'), se = FALSE) + 
+  geom_smooth(data = trump_nyt_time, aes(x = date, y = day_score, color = 'Trump NYT'), se = FALSE) + 
+  geom_smooth(data = biden_nyt_time, aes(x = date, y = day_score, color = 'Biden NYT'), se = FALSE) + 
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = mdy('11-08-2020'),color='black') +
+  scale_color_manual(name='',
+                     breaks=c('Trump Guardian', 'Trump NYT', 'Biden Guardian', 'Biden NYT'),
+                     values=c('Trump Guardian' = "brown", 'Trump NYT' = "red", 'Biden Guardian' = "blue", 'Biden NYT' = "blue4"))+
+  scale_x_date(date_breaks="4 month", date_labels="%m-%Y") +
+  labs(title = "Guardian and NYT 2020 through 2022",
+       subtitle = "Average Sentiment Score for Trump and Biden Quarterly") +
+  xlab("") +
+  ylab("Score") + theme_classic()
+```
 
 
 # Unanswered Questions and Limitations
 The process of sentiment analysis is extremely insightful for looking at candidates and how newspapers frame their articles about them. That being said, it’s difficult to make many conclusions beyond what is really seen reflected in the graphs. The furthest conclusions we can make are by looking at the graph trend, looking at the date(s), and then looking to see if the trend could correlate with the event that happened for the candidate that day. 
 In terms of limitations, as mentioned earlier, we were only able to gain access to left leaning newspapers. It would have been interesting to compare more moderate or right leaning newspapers, given we would infer that these sources would "rate" Donald Trump higher than Joe Biden in terms of article scores. 
+
 # Final Conclusions
