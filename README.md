@@ -174,6 +174,7 @@ library(rvest)
 library(tm)
 library(ggraph)
 library(SnowballC)
+library(tinytex)
 data("stop_words")
 mystopwords <- tibble(word = c("trump", "trumps", "trump's","trump’s", "biden", "biden's", "biden’s", "donald", "u.s", "joe", "elizabeth", "warren", "here/'s", "sanders", "joseph", "it/'s", "here's", "jr", "vice", "bernie", "obama", "hampshire", "thursday", "tuesday", "bloomberg", "ms", "gail", "bret", "dr", "buttigieg"))
 ```
